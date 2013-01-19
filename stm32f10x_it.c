@@ -131,6 +131,9 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
+
+
+//Rzrkrt az OS béhzi
 /*void PendSV_Handler(void)
 {
 }
@@ -182,18 +185,7 @@ void DMA1_Channel5_IRQHandler(void)
 
 
 }
-void ADC1_2_IRQHandler(void)
-{
-/*
-	static uint8_t i=0;
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-	xSemaphoreGiveFromISR(xADCSemaphore,&xHigherPriorityTaskWoken);
-	 ADCValue[i] = ADC_GetConversionValue(ADC1);
-	if (i==1) i=0;
-	else i=1;
-	 portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
-*/
-}
+
 extern xQueueHandle TransmitQueue;
 extern uint8_t throttle;
 void USART1_IRQHandler (void)
@@ -224,38 +216,7 @@ void USART1_IRQHandler (void)
 
 
 
-void I2C2_EV_IRQHandler (void)
-{
-	uint32_t event;
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-/*
-	if(I2C_GetITStatus(I2C2,I2C_IT_SB)==SET)
-	{
-		I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
-		xSemaphoreGiveFromISR(I2C_SB,&xHigherPriorityTaskWoken);
-	}
-	if(I2C_GetITStatus(I2C2,I2C_IT_ADDR)==SET)
-	{
-		I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
-		xSemaphoreGiveFromISR(I2C_ADDR,&xHigherPriorityTaskWoken);
-	}
-	if(I2C_GetITStatus(I2C2,I2C_IT_BTF)==SET)
-	{
-		I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
-		xSemaphoreGiveFromISR(I2C_BTF,&xHigherPriorityTaskWoken);
-	}
 
-	event=I2C_GetLastEvent(I2C2);
-	if (event&I2C_EVENT_MASTER_BYTE_RECEIVED)
-	{
-		I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
-		xSemaphoreGiveFromISR(I2C_RECEIVED,&xHigherPriorityTaskWoken);
-	}
-
-*/
-	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
-
-}
 
 
 /**

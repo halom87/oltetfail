@@ -14,7 +14,7 @@
 #define I2C_TxChannel DMA1_Channel4
 
 DMA_InitTypeDef DMA_InitStructure;
-
+//DMA config I2C
 void DMA_Config(void)
 {
 
@@ -38,12 +38,8 @@ void DMA_Config(void)
 //
 //	DMA_Cmd(DMA1_Channel1, ENABLE);
 
-
-
-
-
-
 }
+//DMA Fogadás beállítása
 void I2C_DMAReceive(uint8_t * Buffer, uint8_t NmbrOfBytes)
 {
 	DMA_DeInit(I2C_RxChannel);
@@ -54,10 +50,10 @@ void I2C_DMAReceive(uint8_t * Buffer, uint8_t NmbrOfBytes)
 	DMA_Cmd(I2C_RxChannel, DISABLE);
 
 	DMA_Init(I2C_RxChannel,&DMA_InitStructure);
-//	DMA_ITConfig(I2C_RxChannel,DMA_IT_TC,ENABLE);
-//	DMA_Cmd(I2C_RxChannel, ENABLE);
+	DMA_ITConfig(I2C_RxChannel,DMA_IT_TC,ENABLE);
+	DMA_Cmd(I2C_RxChannel, ENABLE);
 }
-
+//DMA küldés beállítása
 void I2C_DMATransmit(uint8_t * Buffer, uint8_t NmbrOfBytes)
 {
 	DMA_DeInit(I2C_TxChannel);
