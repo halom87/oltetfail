@@ -8,6 +8,6 @@
 #ifndef GPIO_H_
 #define GPIO_H_
 
-void IO_Init(void);
+void IO_Config(void);
 
 #endif /* GPIO_H_ */

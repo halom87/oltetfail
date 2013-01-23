@@ -32,7 +32,7 @@
 #include "DMA.h"
 #include "NVIC.h"
 #include "I2C.h"
-//#include "MadgwickAHRS.h"
+#include "MadgwickAHRS.h"
 #include "lsm303dlhc_driver.h"
 #include "l3g4200d_driver.h"
 
@@ -72,12 +72,13 @@ int main(void)
 	vSemaphoreCreateBinary(xADCSemaphore);
 	RCC_Config();
 
-	IO_Init();
+	IO_Config();
 	UART_Config();
 	PWM_Config();
 	DMA_Config();
 	I2C_Config();
 	NVIC_Config();
+
 	DebugTimerInit();
 
 	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,NULL);
@@ -231,6 +232,7 @@ static void prvSensorReadTask (void* pvParameters)
 	xLastWakeTime=xTaskGetTickCount();
 	while(1)
 	{
+		//400Hz-el jon az adat a gyorsulas merobol es a gyrobol.
 		GetSatusReg(&status);
 		if (status&0b0001000) //new data received
 		{
@@ -245,7 +247,7 @@ static void prvSensorReadTask (void* pvParameters)
 
 		}
 
-
+		//az iranytubol csak 30Hz
 		ReadStatusM(&status);
 		if (status&0x01)
 		{
@@ -270,7 +272,9 @@ static void prvSensorReadTask (void* pvParameters)
 			newData=0;
 		}
 		vTaskDelayUntil(&xLastWakeTime,100);
-
+		float x=2;
+		x=invSqrt(x);
+		//x?=0.707168
 	}
 
 }

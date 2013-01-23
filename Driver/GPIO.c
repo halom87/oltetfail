@@ -8,7 +8,7 @@
 #include "GPIO.h"
 #include "stm32f10x.h"
 
-void IO_Init(void)
+void IO_Config(void)
 {
 
 	GPIO_InitTypeDef GPIO_InitStructure;
