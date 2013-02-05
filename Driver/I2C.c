@@ -58,8 +58,8 @@ uint8_t I2C_BufferRead(uint8_t* Data, uint8_t deviceAddress, uint8_t ReadAddr, u
 			I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Transmitter);
 			while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-			if (len>1) ReadAddr|=0x80;
-			I2C_SendData(I2C2, ReadAddr);
+			//if (len>1) ReadAddr|=0x80;
+			I2C_SendData(I2C2, ReadAddr + i);
 			while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
 			I2C_GenerateSTART(I2C2,ENABLE);
@@ -71,7 +71,7 @@ uint8_t I2C_BufferRead(uint8_t* Data, uint8_t deviceAddress, uint8_t ReadAddr, u
 			I2C_AcknowledgeConfig(I2C2,DISABLE);
 			while (!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_RECEIVED));
 
-			*Data=I2C_ReceiveData(I2C2);
+			*(Data + i) =I2C_ReceiveData(I2C2);
 
 			I2C_GenerateSTOP(I2C2, ENABLE);
 			while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF)); // stop bit flag
