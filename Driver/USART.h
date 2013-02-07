@@ -9,8 +9,6 @@
 #define USART_H_
 
 void UART_Config(void);
-void inline UARTStartSend(void);
-
-
+int UARTStartSend(uint8_t * buffer, int startIndex, int length);
 
 #endif /* USART_H_ */

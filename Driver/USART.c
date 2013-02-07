@@ -13,12 +13,13 @@
 #define TRANSMIT_BUFFER_SIZE (63)
 
 xQueueHandle TransmitQueue;
+xQueueHandle ReceiveQueue;
 
 void UART_Config(void)
 {
 	USART_InitTypeDef USART_InitStructure;
 
-	USART_InitStructure.USART_BaudRate=9600;
+	USART_InitStructure.USART_BaudRate=115200;
 	USART_InitStructure.USART_WordLength=USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits=USART_StopBits_1;
 	USART_InitStructure.USART_Parity=USART_Parity_No;
@@ -29,10 +30,26 @@ void UART_Config(void)
 	USART_Cmd(USART1, ENABLE);
 
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-//	USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+	USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+
 	TransmitQueue=xQueueCreate(TRANSMIT_BUFFER_SIZE,sizeof(portCHAR));
+	ReceiveQueue=xQueueCreate(TRANSMIT_BUFFER_SIZE,sizeof(portCHAR));
 }
-void inline UARTStartSend(void)
+
+int UARTStartSend(uint8_t * buffer, int startIndex, int length)
 {
-	USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+	int sent = 0;
+	for (sent=0; sent<length; sent++)
+	{
+		// Is it full?
+		if (TRANSMIT_BUFFER_SIZE - uxQueueMessagesWaiting(TransmitQueue) == 0) break;
+		// At least one free space, put in one
+		xQueueSend( TransmitQueue, & buffer[startIndex + sent], 0);
+	}
+
+	// Enable sending
+	if (sent > 0)
+		USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+	// Return sent items count
+	return sent;
 }

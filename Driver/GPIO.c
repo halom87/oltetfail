@@ -13,6 +13,13 @@ void IO_Config(void)
 
 	GPIO_InitTypeDef GPIO_InitStructure;
 
+	// BT power on
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init( GPIOA, &GPIO_InitStructure );
+	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
+
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
