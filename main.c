@@ -80,7 +80,7 @@ int main(void)
 	NVIC_Config();
 
 	DebugTimerInit();
-
+	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
 	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,NULL);
 
 	vTaskStartScheduler();
@@ -206,13 +206,13 @@ static void prvLEDTask (void* pvParameters)
 	for( ;; )
 	{
 		char c;
-		if(GPIO_ReadOutputDataBit(GPIOC,GPIO_Pin_4))  //toggle led
+		if(GPIO_ReadOutputDataBit(GPIOA,GPIO_Pin_1))  //toggle led
 		{
-			GPIO_ResetBits(GPIOC,GPIO_Pin_4); //set to zero
+			GPIO_ResetBits(GPIOA,GPIO_Pin_1); //set to zero
 		}
 		else
 		{
-			GPIO_SetBits(GPIOC,GPIO_Pin_4);//set to one
+			GPIO_SetBits(GPIOA,GPIO_Pin_1);//set to one
 		}
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency);

@@ -24,6 +24,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "stm32f10x_it.h"
+#include "stm32f10x.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -218,8 +219,61 @@ void USART1_IRQHandler (void)
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
+extern xQueueHandle I2C_SendQueue;
+extern xSemaphoreHandle I2C_TransferComplete;
+void I2C2_EV_IRQHandler (void)
+{
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	static uint8_t state=0;
 
+	uint8_t data;
+	switch (state)
+	{
+	case 0: //start bit sent address sending
+		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT))
+			{
+				state++;
+				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
+			    I2C_Send7bitAddress(I2C2,data , I2C_Direction_Transmitter);
+			}
+		else state = 0xFF;
+		break;
+	case 1: //address sent, reg address sending
+		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+			{
+				state++;
+				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
+			    I2C_SendData(I2C2, data);
+			}
+		else state =0xff;
+		break;
+	case 2: //reg address sent, data sending
+		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+			{
+				state++;
+				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
+			    I2C_SendData(I2C2, data);
+			}
+		else state =0xff;
+		break;
+	case 3: //reg address sent, data sending
+		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+			{
+				state=0;
+			    I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+			    xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
+			}
+		else state =0xff;
+		break;
+	default:
+		state=0;
+	    I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+		break;
 
+	}
+
+	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+}
 
 
 

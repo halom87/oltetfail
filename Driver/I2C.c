@@ -13,6 +13,7 @@
 
 static xSemaphoreHandle I2CBusy;
 xSemaphoreHandle I2C_TransferComplete;
+xQueueHandle I2C_SendQueue;
 
 //
 void I2C_Config(void)
@@ -22,6 +23,7 @@ void I2C_Config(void)
 	I2CBusy = xSemaphoreCreateMutex();
 	vSemaphoreCreateBinary(I2C_TransferComplete);
 	xSemaphoreTake(I2C_TransferComplete,0);
+	I2C_SendQueue=xQueueCreate(3,sizeof (uint8_t)); //Device address, Register address, data
 
 
 	I2C_InitStructure.I2C_Mode=I2C_Mode_I2C;
@@ -138,24 +140,25 @@ uint8_t I2C_ByteWrite(uint8_t Data, uint8_t deviceAddress, uint8_t WriteAddr)
 {
 	if (xSemaphoreTake(I2CBusy,portMAX_DELAY))
 	{
+		if (I2C_SendQueue==0)
+		{
+			return 0;
+		}
+		xQueueSend(I2C_SendQueue,&deviceAddress,0);
+		xQueueSend(I2C_SendQueue,&WriteAddr,0);
+		xQueueSend(I2C_SendQueue,&Data,0);
+
 
 	    while (I2C_GetFlagStatus(I2C2,I2C_FLAG_BUSY));
 	    I2C_AcknowledgeConfig(I2C2, ENABLE);
 
+	    I2C_ITConfig(I2C2,I2C_IT_EVT,ENABLE);
+
 		I2C_GenerateSTART(I2C2, ENABLE);
-	    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT));
 
-	    I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Transmitter);
-	    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+		xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
+		while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF));
 
-	    I2C_SendData(I2C2, WriteAddr);
-	    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-
-	    I2C_SendData(I2C2, Data);
-	    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-
-	    I2C_GenerateSTOP(I2C2, ENABLE);
-	    while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF));
 
 		xSemaphoreGive(I2CBusy);
 	    return 1;
