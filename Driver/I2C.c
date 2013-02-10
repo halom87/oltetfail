@@ -14,7 +14,9 @@
 static xSemaphoreHandle I2CBusy;
 xSemaphoreHandle I2C_TransferComplete;
 xQueueHandle I2C_SendQueue;
+xQueueHandle I2C_ReceiveQueue;
 
+uint8_t I2C_TransmitNReceive; //1 transmit 0 receive
 //
 void I2C_Config(void)
 {
@@ -24,6 +26,7 @@ void I2C_Config(void)
 	vSemaphoreCreateBinary(I2C_TransferComplete);
 	xSemaphoreTake(I2C_TransferComplete,0);
 	I2C_SendQueue=xQueueCreate(3,sizeof (uint8_t)); //Device address, Register address, data
+	I2C_ReceiveQueue=xQueueCreate(6,sizeof (uint8_t)); //3x2 byte
 
 
 	I2C_InitStructure.I2C_Mode=I2C_Mode_I2C;
@@ -47,99 +50,38 @@ uint8_t I2C_BufferRead(uint8_t* Data, uint8_t deviceAddress, uint8_t ReadAddr, u
 	int i=0;
 	if (xSemaphoreTake(I2CBusy,portMAX_DELAY))
 	{
-		for (i=0; i<len; i++)
-		{
+	/*	for (i=0; i<len; i++)
+		{*/
+			I2C_TransmitNReceive=0;
 			while (I2C_GetFlagStatus(I2C2,I2C_FLAG_BUSY));
+			xQueueSend(I2C_SendQueue,&deviceAddress,0);
+			if (len>1)ReadAddr|=0x80;
+			xQueueSend(I2C_SendQueue,&ReadAddr,0);
 
 			I2C_ClearFlag(I2C2,I2C_FLAG_AF);
 			I2C_AcknowledgeConfig(I2C2, ENABLE);
 
+			I2C_ITConfig(I2C2,I2C_IT_EVT,ENABLE);
+			I2C_DMAReceive(Data,len);
 			I2C_GenerateSTART(I2C2, ENABLE);
-			while(!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT));
+			xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
+			ReadAddr++;
+			//xQueueReceive(I2C_ReceiveQueue,(Data + i),portMAX_DELAY);
+	        /* Make sure that the STOP bit is cleared by Hardware before CR1 write access */
+	        while ((I2C2->CR1&0x200) == 0x200);
 
-			I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Transmitter);
-			while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
-
-			//if (len>1) ReadAddr|=0x80;
-			I2C_SendData(I2C2, ReadAddr + i);
-			while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-
-			I2C_GenerateSTART(I2C2,ENABLE);
-			while(!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT));
-
-			I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Receiver);
-			while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
-
-			I2C_AcknowledgeConfig(I2C2,DISABLE);
-			while (!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_RECEIVED));
-
-			*(Data + i) =I2C_ReceiveData(I2C2);
-
-			I2C_GenerateSTOP(I2C2, ENABLE);
-			while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF)); // stop bit flag
-		}
+		//}
 
 	 	xSemaphoreGive(I2CBusy);
 	    return 1;
 	}
 	return 0;
-
-	/*
-	if (xSemaphoreTake(I2CBusy,portMAX_DELAY))
-	{
-	    while (I2C_GetFlagStatus(I2C2,I2C_FLAG_BUSY));
-
-	    I2C_ClearFlag(I2C2,I2C_FLAG_AF);
-	    I2C_AcknowledgeConfig(I2C2, ENABLE);
-
-		I2C_GenerateSTART(I2C2, ENABLE);
-		while(!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT));
-
-		I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Transmitter);
-	    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
-
-	    if (len>1) ReadAddr|=0x80;
-	    I2C_SendData(I2C2, ReadAddr);
-	    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-
-	    I2C_GenerateSTART(I2C2,ENABLE);
-		while(!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT));
-
-	    I2C_Send7bitAddress(I2C2, deviceAddress, I2C_Direction_Receiver);
-	    while (!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
-
-		I2C_AcknowledgeConfig(I2C2,DISABLE);
-	    while (!I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_RECEIVED));
-
-		*Data=I2C_ReceiveData(I2C2);
-
-		//DMA-s olvasás, jó lenne, ha menne
-//	    I2C_DMAReceive(Data,len);
-//	    I2C_DMALastTransferCmd(I2C2,ENABLE);
-//	    I2C_DMACmd(I2C2,ENABLE);
-//	    DMA_Cmd(DMA1_Channel5, ENABLE);
-//	    I2C_ITConfig(I2C2,I2C_IT_EVT,ENABLE);
-//        while (!DMA_GetFlagStatus(DMA1_FLAG_TC5));
-
-	//    xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
-
-//	    I2C_DMACmd(I2C2,DISABLE);
-//	    DMA_Cmd(DMA1_Channel5, DISABLE);
-//      DMA_ClearFlag(DMA1_FLAG_TC5);
-
-	    I2C_GenerateSTOP(I2C2, ENABLE);
-	 	while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF)); // stop bit flag
-
-	 	xSemaphoreGive(I2CBusy);
-	    return 1;
-	}
-	return 0;
-	*/
 }
 uint8_t I2C_ByteWrite(uint8_t Data, uint8_t deviceAddress, uint8_t WriteAddr)
 {
 	if (xSemaphoreTake(I2CBusy,portMAX_DELAY))
 	{
+		I2C_TransmitNReceive=1;
 		if (I2C_SendQueue==0)
 		{
 			return 0;
@@ -157,7 +99,8 @@ uint8_t I2C_ByteWrite(uint8_t Data, uint8_t deviceAddress, uint8_t WriteAddr)
 		I2C_GenerateSTART(I2C2, ENABLE);
 
 		xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
-		while(I2C_GetFlagStatus(I2C2, I2C_FLAG_STOPF));
+        /* Make sure that the STOP bit is cleared by Hardware before CR1 write access */
+        while ((I2C2->CR1&0x200) == 0x200);
 
 
 		xSemaphoreGive(I2CBusy);

@@ -178,8 +178,16 @@ void DMA1_Channel5_IRQHandler(void)
 
 	xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
 
-	DMA_ClearITPendingBit(DMA1_IT_TC5);
+    /* Disable DMA Channel */
+    DMA_Cmd(DMA1_Channel5, DISABLE);
+    /* Clear the DMA Transfer Complete flag */
+    DMA_ClearFlag(DMA1_FLAG_TC5);
 	DMA_ITConfig(DMA1_Channel5,DMA_IT_TC,DISABLE);
+	I2C_DMALastTransferCmd(I2C2,DISABLE);
+	I2C_DMACmd(I2C2,DISABLE);
+
+    I2C_GenerateSTOP(I2C2,ENABLE);
+
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 
@@ -219,57 +227,126 @@ void USART1_IRQHandler (void)
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
+extern uint8_t I2C_TransmitNReceive;
 extern xQueueHandle I2C_SendQueue;
+extern xQueueHandle I2C_ReceiveQueue;
 extern xSemaphoreHandle I2C_TransferComplete;
 void I2C2_EV_IRQHandler (void)
 {
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	static uint8_t state=0;
+	uint32_t SR1,SR2;
 
 	uint8_t data;
+	static uint8_t deviceAddress;
+	if (I2C_TransmitNReceive==1)
+	{
+		switch (state)
+		{
+		case 0:
+		case 1:
+			break;
+		case 2: //reg address sent, data sending
+			if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+			{
+				state++;
+				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
+				I2C_SendData(I2C2, data);
+			}
+			else state =0xff;
+			break;
+		case 3: //data sent stop
+			if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+			{
+				state=5;
+				I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+				I2C_GenerateSTOP(I2C2,ENABLE);
+				xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
+			}
+			else state =0xff;
+			break;
+		default:
+			state=0;
+			I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+			break;
+		}
+	}
+	else
+	{
+		switch (state)
+		{
+		case 0:
+		case 1:
+			break;
+		case 2: //reg address sent, repeat start
+			if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+			{
+				I2C_DMALastTransferCmd(I2C2,ENABLE);
+				I2C_DMACmd(I2C2,ENABLE);
+				I2C_GenerateSTART(I2C2, ENABLE);
+				state++;
+				I2C2->DR=0x00; //delete pending interrupts
+			}
+			else state =0xfc;
+			break;
+		case 3: //start bit sent address sending for receive
+			if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT))
+			{
+				state++;
+				I2C_Send7bitAddress(I2C2,deviceAddress , I2C_Direction_Receiver);
+			}
+			else
+			{
+				SR1=I2C2->SR1;
+				SR2=I2C2->SR2;
+
+				state = 0xFd;
+
+			}
+			break;
+		case 4: //address sent, reg address sending
+			state=5;
+//			I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+			if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+			{
+				state=5;
+				I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+			}
+			else state =0xfe;
+			break;
+
+		}
+	}
+
 	switch (state)
 	{
 	case 0: //start bit sent address sending
 		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_MODE_SELECT))
-			{
-				state++;
-				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
-			    I2C_Send7bitAddress(I2C2,data , I2C_Direction_Transmitter);
-			}
+		{
+			state++;
+			xQueueReceiveFromISR(I2C_SendQueue,&deviceAddress,&xHigherPriorityTaskWoken);
+			I2C_Send7bitAddress(I2C2,deviceAddress , I2C_Direction_Transmitter);
+		}
 		else state = 0xFF;
 		break;
 	case 1: //address sent, reg address sending
 		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-			{
-				state++;
-				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
-			    I2C_SendData(I2C2, data);
-			}
+		{
+			state++;
+			xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
+			I2C_SendData(I2C2, data);
+		}
 		else state =0xff;
 		break;
-	case 2: //reg address sent, data sending
-		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-			{
-				state++;
-				xQueueReceiveFromISR(I2C_SendQueue,&data,&xHigherPriorityTaskWoken);
-			    I2C_SendData(I2C2, data);
-			}
-		else state =0xff;
-		break;
-	case 3: //reg address sent, data sending
-		if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-			{
-				state=0;
-			    I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
-			    xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
-			}
-		else state =0xff;
-		break;
-	default:
+	case 5:
 		state=0;
-	    I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
 		break;
-
+	}
+	if (state>5)
+	{
+			I2C_ITConfig(I2C2,I2C_IT_EVT,DISABLE);
+			state=0;
+		    I2C_GenerateSTOP(I2C2,ENABLE);
 	}
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
