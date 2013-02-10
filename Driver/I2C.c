@@ -58,14 +58,14 @@ uint8_t I2C_BufferRead(uint8_t* Data, uint8_t deviceAddress, uint8_t ReadAddr, u
 			if (len>1)ReadAddr|=0x80;
 			xQueueSend(I2C_SendQueue,&ReadAddr,0);
 
-			I2C_ClearFlag(I2C2,I2C_FLAG_AF);
-			I2C_AcknowledgeConfig(I2C2, ENABLE);
+			//I2C_ClearFlag(I2C2,I2C_FLAG_AF);
+			if (len==1) I2C_AcknowledgeConfig(I2C2, DISABLE);
+			else I2C_AcknowledgeConfig(I2C2, ENABLE);
 
 			I2C_ITConfig(I2C2,I2C_IT_EVT,ENABLE);
 			I2C_DMAReceive(Data,len);
 			I2C_GenerateSTART(I2C2, ENABLE);
 			xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
-			ReadAddr++;
 			//xQueueReceive(I2C_ReceiveQueue,(Data + i),portMAX_DELAY);
 	        /* Make sure that the STOP bit is cleared by Hardware before CR1 write access */
 	        while ((I2C2->CR1&0x200) == 0x200);

@@ -174,9 +174,14 @@ void DMA1_Channel4_IRQHandler(void)
 }
 void DMA1_Channel5_IRQHandler(void)
 {
+	uint8_t tmp;
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
 	xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
+	if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_RECEIVED))
+	{
+		tmp=I2C2->DR;
+	}
 
     /* Disable DMA Channel */
     DMA_Cmd(DMA1_Channel5, DISABLE);

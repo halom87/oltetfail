@@ -249,7 +249,7 @@ static void prvSensorReadTask (void* pvParameters)
 
 		//az iranytubol csak 30Hz
 		//ReadStatusM(&status);
-		/*if (status&0x01)
+		if (status&0x01)
 		{
 			readMag(data);
 			x_mag=((int16_t)data[0])<<8;
@@ -258,7 +258,7 @@ static void prvSensorReadTask (void* pvParameters)
 			y_mag|=data[3];
 			z_mag=((int16_t)data[4])<<8;
 			z_mag|=data[5];
-		}*/
+		}
 		L3G4200D_GetSatusReg(&status);
 		if (status&0b00001000)
 		{
@@ -272,7 +272,7 @@ static void prvSensorReadTask (void* pvParameters)
 		{
 			newData=0;
 		}
-		vTaskDelayUntil(&xLastWakeTime,100);
+		vTaskDelayUntil(&xLastWakeTime,200);
 		float x=2;
 		x=invSqrt(x);
 		//x?=0.707168
