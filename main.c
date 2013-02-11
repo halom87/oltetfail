@@ -42,10 +42,10 @@
 #include <stdio.h>
 
 extern __IO uint16_t ADCValue[2];
-extern xQueueHandle TransmitQueue;
 volatile uint16_t eredmeny,kezdet, vege;
 #define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 1  )
 #define TASK_PWMSET_PRIORITY ( tskIDLE_PRIORITY  + 1 )
+#define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 1 )
 #define TASK_ADCREAD_PRIORITY ( tskIDLE_PRIORITY + 2 )
 #define TASK_ADCSTART_PRIORITY ( tskIDLE_PRIORITY + 1 )
 #define TASK_INIT_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -56,6 +56,8 @@ static void prvLEDTask (void *pvParameters);
 static void prvPWMSetTask (void* pvParameters);
 //Azok az inicializálások futnak itt amihez kellenek már az oprendszer szolgáltatásai:)
 static void prvInitTask (void* pvParameters);
+// BT kommunikáció teszt
+static void prvBTCommTask (void* pvParameters);
 //itt képne kiolvasni a szenzorokat
 static void prvSensorReadTask (void* pvParameters);
 
@@ -64,7 +66,6 @@ xSemaphoreHandle xADCSemaphore = NULL;
 #ifdef HC05_INIT
 const portCHAR init[]="AT+UART=38400,0,0\r\n";
 #endif
-extern xQueueHandle TransmitQueue;
 
 int main(void)
 {
@@ -110,6 +111,7 @@ static void prvInitTask(void* pvParameters)
 
 	//taszk indítás
 	xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,NULL);
+	xTaskCreate(prvBTCommTask,(signed char*)"BT Comm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,NULL);
 	xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
 	xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
 
@@ -120,6 +122,30 @@ static void prvInitTask(void* pvParameters)
 	}
 
 }
+
+uint8_t recvTemp[256];
+static void prvBTCommTask (void* pvParameters)
+{
+	portTickType xLastWakeTime;
+	uint8_t HCI_Read_Local_Name[3];
+	uint8_t recvPos = 0;
+
+	xLastWakeTime=xTaskGetTickCount();
+
+	HCI_Read_Local_Name[0] = 0x00;
+	HCI_Read_Local_Name[1] = 0x14;
+	HCI_Read_Local_Name[2] = 0x00;
+
+	vTaskDelayUntil(&xLastWakeTime,500);
+	UART_StartSend(HCI_Read_Local_Name, 0, 3);
+
+	for(;;)
+	{
+		recvPos += UART_TryReceive(recvTemp, recvPos, -1, portMAX_DELAY);
+		vTaskDelayUntil(&xLastWakeTime,100);
+	}
+}
+
 //debug gaz valtozo, bluetoothon keresztul valtoztathato
 uint8_t throttle=0;
 static void prvPWMSetTask (void* pvParameters)
@@ -208,11 +234,11 @@ static void prvLEDTask (void* pvParameters)
 		char c;
 		if(GPIO_ReadOutputDataBit(GPIOA,GPIO_Pin_1))  //toggle led
 		{
-			GPIO_ResetBits(GPIOA,GPIO_Pin_1); //set to zero
+			GPIO_ResetBits(GPIOA, GPIO_Pin_1); //set to zero
 		}
 		else
 		{
-			GPIO_SetBits(GPIOA,GPIO_Pin_1);//set to one
+			GPIO_SetBits(GPIOA,GPIO_Pin_1); //set to one
 		}
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency);

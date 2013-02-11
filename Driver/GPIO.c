@@ -20,17 +20,20 @@ void IO_Config(void)
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	// USART RX és CTS
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	// USART TX és RTS
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_1|GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_2MHz;
+	// LED 1,2
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 

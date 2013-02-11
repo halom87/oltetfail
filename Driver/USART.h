@@ -8,7 +8,20 @@
 #ifndef USART_H_
 #define USART_H_
 
+#include "stm32f10x.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
+
+#define BT_BUFFER_SIZE (63)
+
 void UART_Config(void);
-int UARTStartSend(uint8_t * buffer, int startIndex, int length);
+// returns the count of bytes sent
+int UART_StartSend(uint8_t * buffer, int startIndex, int length);
+// return the count of bytes received
+// if length is negative, it tries to real all available
+// timeoutPerByte can be portMAX_DELAY (if INCLUDE_vTaskSuspend is enabled in OS)
+int UART_TryReceive(uint8_t *buffer, int startIndex, int length, portTickType timeoutPerByte);
+unsigned int UART_GetReceivedBytesCount();
 
 #endif /* USART_H_ */

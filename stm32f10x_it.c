@@ -232,6 +232,7 @@ void USART1_IRQHandler (void)
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
+
 extern uint8_t I2C_TransmitNReceive;
 extern xQueueHandle I2C_SendQueue;
 extern xQueueHandle I2C_ReceiveQueue;
