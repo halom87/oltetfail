@@ -251,10 +251,9 @@ static void prvSensorReadTask (void* pvParameters)
 	static uint8_t data[6];
 	static uint8_t newData;
 	AccAxesRaw_t AccAxes;
+	MagAxesRaw_t MagAxes;
+	AxesRaw_t GyroAxes;
 	uint8_t status;
-	int16_t x_acc,y_acc,z_acc;
-	int16_t x_mag,y_mag,z_mag;
-	int16_t x_gyr,y_gyr,z_gyr;
 	xLastWakeTime=xTaskGetTickCount();
 	while(1)
 	{
@@ -267,9 +266,9 @@ static void prvSensorReadTask (void* pvParameters)
 			readACC(data);
 
 			//allithato endiannes miatt olvasható így is
-			x_acc=((int16_t*)data)[0];
-			y_acc=((int16_t*)data)[1];
-			z_acc=((int16_t*)data)[2];
+			AccAxes.AXIS_X=((int16_t*)data)[0];
+			AccAxes.AXIS_Y=((int16_t*)data)[1];
+			AccAxes.AXIS_Z=((int16_t*)data)[2];
 
 		}
 
@@ -278,27 +277,27 @@ static void prvSensorReadTask (void* pvParameters)
 		if (status&0x01)
 		{
 			readMag(data);
-			x_mag=((int16_t)data[0])<<8;
-			x_mag|=data[1];
-			y_mag=((int16_t)data[2])<<8;
-			y_mag|=data[3];
-			z_mag=((int16_t)data[4])<<8;
-			z_mag|=data[5];
+			MagAxes.AXIS_X=((int16_t)data[0])<<8;
+			MagAxes.AXIS_X|=data[1];
+			MagAxes.AXIS_Y=((int16_t)data[2])<<8;
+			MagAxes.AXIS_Y|=data[3];
+			MagAxes.AXIS_Z=((int16_t)data[4])<<8;
+			MagAxes.AXIS_Z|=data[5];
 		}
 		L3G4200D_GetSatusReg(&status);
 		if (status&0b00001000)
 		{
 			ReadGyro(data);
 			newData|=2;
-			x_gyr=((int16_t*)data)[0];
-			y_gyr=((int16_t*)data)[1];
-			z_gyr=((int16_t*)data)[2];
+			GyroAxes.AXIS_X=((int16_t*)data)[0];
+			GyroAxes.AXIS_Y=((int16_t*)data)[1];
+			GyroAxes.AXIS_Z=((int16_t*)data)[2];
 		}
 		if (newData==3)
 		{
 			newData=0;
 		}
-		vTaskDelayUntil(&xLastWakeTime,200);
+		vTaskDelayUntil(&xLastWakeTime,100);
 		float x=2;
 		x=invSqrt(x);
 		//x?=0.707168

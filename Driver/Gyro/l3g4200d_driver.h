@@ -30,6 +30,7 @@
 
 //sajat
 uint8_t initSensorGyro(void);
+void inline ReadGyro(uint8_t * data);
 
 //sajat
 /* Includes ------------------------------------------------------------------*/
