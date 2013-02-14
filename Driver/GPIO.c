@@ -18,11 +18,12 @@ void IO_Config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
-	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
+	while (GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_4))
+		GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 
 	// USART RX és CTS
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
 	// USART TX és RTS

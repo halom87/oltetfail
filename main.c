@@ -113,7 +113,7 @@ static void prvInitTask(void* pvParameters)
 	xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,NULL);
 	xTaskCreate(prvBTCommTask,(signed char*)"BT Comm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,NULL);
 	xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
-	xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
+	//xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
 
 	vTaskDelete(NULL);
 	while(1)
@@ -227,7 +227,7 @@ static void prvLEDTask (void* pvParameters)
 	const portCHAR teszt[]="Hello World!\r\n";
 	uint8_t i;
 	portTickType xLastWakeTime;
-	const portTickType xFrequency = 5000;
+	const portTickType xFrequency = 500;
 	xLastWakeTime=xTaskGetTickCount();
 	for( ;; )
 	{
@@ -241,7 +241,7 @@ static void prvLEDTask (void* pvParameters)
 			GPIO_SetBits(GPIOA,GPIO_Pin_1); //set to one
 		}
 
-		vTaskDelayUntil(&xLastWakeTime,xFrequency);
+		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}
 }
 //szenzor kiolvasas

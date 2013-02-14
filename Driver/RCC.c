@@ -16,7 +16,7 @@ void RCC_Config(void)
 	//jelenleg belso orarol megy a cucc 64MHz-en
 	RCC_GetClocksFreq(&RCC_ClockFreq);
 
-	if (SysTick_Config(SystemCoreClock / 10000))
+	if (SysTick_Config(SystemCoreClock / 1000))
 	{
 		/* Capture error */
 		while (1);
