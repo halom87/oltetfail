@@ -132,17 +132,25 @@ static void prvBTCommTask (void* pvParameters)
 
 	xLastWakeTime=xTaskGetTickCount();
 
+	// Wait for BT to go shutdown
+	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
+	vTaskDelayUntil(&xLastWakeTime,1000 * portTICK_RATE_MS);
+
+	// BT is dead, lets boot
+	GPIO_SetBits(GPIOA, GPIO_Pin_4);
+
+	// Create init packets
 	HCI_Read_Local_Name[0] = 0x00;
 	HCI_Read_Local_Name[1] = 0x14;
 	HCI_Read_Local_Name[2] = 0x00;
 
-	vTaskDelayUntil(&xLastWakeTime,500);
+	vTaskDelayUntil(&xLastWakeTime,500 * portTICK_RATE_MS);
 	UART_StartSend(HCI_Read_Local_Name, 0, 3);
 
 	for(;;)
 	{
 		recvPos += UART_TryReceive(recvTemp, recvPos, -1, portMAX_DELAY);
-		vTaskDelayUntil(&xLastWakeTime,100);
+		vTaskDelayUntil(&xLastWakeTime,100 * portTICK_RATE_MS);
 	}
 }
 
@@ -218,7 +226,7 @@ static void prvPWMSetTask (void* pvParameters)
 		xQueueSend(TransmitQueue,' ',( portTickType )0);
 		UARTStartSend();
 */
-		vTaskDelayUntil(&xLastWakeTime,1000);
+		vTaskDelayUntil(&xLastWakeTime,1000 * portTICK_RATE_MS);
 	}
 }
 
@@ -235,11 +243,15 @@ static void prvLEDTask (void* pvParameters)
 		if(GPIO_ReadOutputDataBit(GPIOA,GPIO_Pin_1))  //toggle led
 		{
 			GPIO_ResetBits(GPIOA, GPIO_Pin_1); //set to zero
+			GPIO_ResetBits(GPIOA, GPIO_Pin_2); //set to zero
 		}
 		else
 		{
 			GPIO_SetBits(GPIOA,GPIO_Pin_1); //set to one
+			GPIO_SetBits(GPIOA,GPIO_Pin_2); //set to one
 		}
+
+		c = GPIO_ReadInputDataBit(GPIOA, GPIO_PinSource11);
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}
