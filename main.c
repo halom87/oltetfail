@@ -251,7 +251,7 @@ static void prvLEDTask (void* pvParameters)
 			GPIO_SetBits(GPIOA,GPIO_Pin_2); //set to one
 		}
 
-		c = GPIO_ReadInputDataBit(GPIOA, GPIO_PinSource11);
+		c = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11);
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}
