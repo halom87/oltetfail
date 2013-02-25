@@ -235,7 +235,7 @@ static void prvLEDTask (void* pvParameters)
 	const portCHAR teszt[]="Hello World!\r\n";
 	uint8_t i;
 	portTickType xLastWakeTime;
-	const portTickType xFrequency = 500;
+	const portTickType xFrequency = 200;
 	xLastWakeTime=xTaskGetTickCount();
 	for( ;; )
 	{
