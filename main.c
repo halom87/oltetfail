@@ -45,7 +45,7 @@ extern __IO uint16_t ADCValue[2];
 volatile uint16_t eredmeny,kezdet, vege;
 #define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 1  )
 #define TASK_PWMSET_PRIORITY ( tskIDLE_PRIORITY  + 1 )
-#define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 1 )
+#define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 3 )
 #define TASK_ADCREAD_PRIORITY ( tskIDLE_PRIORITY + 2 )
 #define TASK_ADCSTART_PRIORITY ( tskIDLE_PRIORITY + 1 )
 #define TASK_INIT_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -140,17 +140,23 @@ static void prvBTCommTask (void* pvParameters)
 	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 
 	// Create init packets
-	HCI_Read_Local_Name[0] = 0x00;
-	HCI_Read_Local_Name[1] = 0x14;
-	HCI_Read_Local_Name[2] = 0x00;
+	HCI_Read_Local_Name[0] = 0xFF; //00
+	HCI_Read_Local_Name[1] = 0xFF; //14
+	HCI_Read_Local_Name[2] = 0xFF; //00
 
-	vTaskDelayUntil(&xLastWakeTime,500 * portTICK_RATE_MS);
+	vTaskDelayUntil(&xLastWakeTime,1000 * portTICK_RATE_MS);
 	UART_StartSend(HCI_Read_Local_Name, 0, 3);
 
 	for(;;)
 	{
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
+		UART_StartSend(HCI_Read_Local_Name, 0, 3);
 		recvPos += UART_TryReceive(recvTemp, recvPos, -1, portMAX_DELAY);
-		vTaskDelayUntil(&xLastWakeTime,100 * portTICK_RATE_MS);
+		vTaskDelayUntil(&xLastWakeTime,1 * portTICK_RATE_MS);
 	}
 }
 
