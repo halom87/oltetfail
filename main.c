@@ -140,9 +140,9 @@ static void prvBTCommTask (void* pvParameters)
 	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 
 	// Create init packets
-	HCI_Read_Local_Name[0] = 0xFF; //00
-	HCI_Read_Local_Name[1] = 0xFF; //14
-	HCI_Read_Local_Name[2] = 0xFF; //00
+	HCI_Read_Local_Name[0] = 0x44; //00 //02
+	HCI_Read_Local_Name[1] = 0x02; //14 //44
+	HCI_Read_Local_Name[2] = 0x00; //00 //00
 
 	vTaskDelayUntil(&xLastWakeTime,1000 * portTICK_RATE_MS);
 	UART_StartSend(HCI_Read_Local_Name, 0, 3);
@@ -150,13 +150,8 @@ static void prvBTCommTask (void* pvParameters)
 	for(;;)
 	{
 		UART_StartSend(HCI_Read_Local_Name, 0, 3);
-		UART_StartSend(HCI_Read_Local_Name, 0, 3);
-		UART_StartSend(HCI_Read_Local_Name, 0, 3);
-		UART_StartSend(HCI_Read_Local_Name, 0, 3);
-		UART_StartSend(HCI_Read_Local_Name, 0, 3);
-		UART_StartSend(HCI_Read_Local_Name, 0, 3);
 		recvPos += UART_TryReceive(recvTemp, recvPos, -1, portMAX_DELAY);
-		vTaskDelayUntil(&xLastWakeTime,1 * portTICK_RATE_MS);
+		vTaskDelayUntil(&xLastWakeTime,10 * portTICK_RATE_MS);
 	}
 }
 
@@ -258,6 +253,7 @@ static void prvLEDTask (void* pvParameters)
 		}
 
 		c = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11);
+		c = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12);
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}

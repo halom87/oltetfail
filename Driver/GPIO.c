@@ -29,13 +29,15 @@ void IO_Config(void)
 	// USART TX
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	// LEÉG ha ezt elállítod!!
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD; // !!!
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
 	// USART RTS
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	// LEÉG ha ezt elállítod!!
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // !!!
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 	GPIO_ResetBits(GPIOA, GPIO_Pin_12);
 
