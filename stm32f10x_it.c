@@ -29,7 +29,6 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
-#include "USART.h"
 
 extern xSemaphoreHandle xADCSemaphore;
 
@@ -200,6 +199,7 @@ void DMA1_Channel5_IRQHandler(void)
 
 }
 
+/*
 extern xQueueHandle TransmitQueue;
 extern xQueueHandle ReceiveQueue;
 void USART1_IRQHandler (void)
@@ -232,6 +232,7 @@ void USART1_IRQHandler (void)
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
+*/
 
 extern uint8_t I2C_TransmitNReceive;
 extern xQueueHandle I2C_SendQueue;

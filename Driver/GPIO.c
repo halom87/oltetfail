@@ -10,7 +10,6 @@
 
 void IO_Config(void)
 {
-
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	// BT power on
