@@ -42,8 +42,8 @@ void hal_uart_dma_init(void)
 	portTickType temp;
 
     // wait for Bluetooth to power up properly (1 sec)
-	temp = xTaskGetTickCount();
-	vTaskDelayUntil(&temp,1000 * portTICK_RATE_MS);
+	//temp = xTaskGetTickCount();
+	//vTaskDelayUntil(&temp,1000 * portTICK_RATE_MS);
 
     hal_uart_dma_set_baud(115200);
 }

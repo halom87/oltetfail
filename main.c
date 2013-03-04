@@ -58,7 +58,7 @@
 
 extern __IO uint16_t ADCValue[2];
 volatile uint16_t eredmeny,kezdet, vege;
-#define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 1  )
+#define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 3  )
 #define TASK_PWMSET_PRIORITY ( tskIDLE_PRIORITY  + 1 )
 #define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 3 )
 #define TASK_ADCREAD_PRIORITY ( tskIDLE_PRIORITY + 2 )
@@ -318,49 +318,6 @@ static void prvPWMSetTask (void* pvParameters)
 		//gege szerint ez igy jo lesz
 		else PWM_SetDutyCycle(0);
 
-		//bluetooth
-/*
-		switch (percent/10)
-		{
-		case 0 :
-			xQueueSend(TransmitQueue,'0',( portTickType )0);
-			break;
-		case 1 :
-			xQueueSend(TransmitQueue,'1',( portTickType )0);
-			break;
-		case 2 :
-			xQueueSend(TransmitQueue,'2',( portTickType )0);
-			break;
-		case 3 :
-			xQueueSend(TransmitQueue,'3',( portTickType )0);
-			break;
-		case 4 :
-			xQueueSend(TransmitQueue,'4',( portTickType )0);
-			break;
-		case 5 :
-			xQueueSend(TransmitQueue,'5',( portTickType )0);
-			break;
-		case 6 :
-			xQueueSend(TransmitQueue,'6',( portTickType )0);
-			break;
-		case 7 :
-			xQueueSend(TransmitQueue,'7',( portTickType )0);
-			break;
-		case 8 :
-			xQueueSend(TransmitQueue,'8',( portTickType )0);
-			break;
-		case 9 :
-			xQueueSend(TransmitQueue,'9',( portTickType )0);
-			break;
-		case 10 :
-			xQueueSend(TransmitQueue,'1',( portTickType )0);
-			xQueueSend(TransmitQueue,'0',( portTickType )0);
-			break;
-
-		}
-		xQueueSend(TransmitQueue,' ',( portTickType )0);
-		UARTStartSend();
-*/
 		vTaskDelayUntil(&xLastWakeTime,1000 * portTICK_RATE_MS);
 	}
 }
@@ -374,7 +331,6 @@ static void prvLEDTask (void* pvParameters)
 	xLastWakeTime=xTaskGetTickCount();
 	for( ;; )
 	{
-		char c;
 		if(GPIO_ReadOutputDataBit(GPIOA,GPIO_Pin_1))  //toggle led
 		{
 			GPIO_ResetBits(GPIOA, GPIO_Pin_1); //set to zero
@@ -385,9 +341,6 @@ static void prvLEDTask (void* pvParameters)
 			GPIO_SetBits(GPIOA,GPIO_Pin_1); //set to one
 			GPIO_SetBits(GPIOA,GPIO_Pin_2); //set to one
 		}
-
-		c = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11);
-		c = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12);
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}

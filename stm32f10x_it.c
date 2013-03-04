@@ -199,41 +199,6 @@ void DMA1_Channel5_IRQHandler(void)
 
 }
 
-/*
-extern xQueueHandle TransmitQueue;
-extern xQueueHandle ReceiveQueue;
-void USART1_IRQHandler (void)
-{
-	portCHAR cChar;
-	portCHAR receivedata;
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-	if( USART_GetITStatus( USART1, USART_IT_TXE ) == SET )
-	{
-		if( xQueueReceiveFromISR( TransmitQueue, &cChar, &xHigherPriorityTaskWoken ) == pdTRUE )
-		{
-			USART_SendData(USART1,cChar);
-		}
-		else
-		{
-			USART_ITConfig( USART1, USART_IT_TXE, DISABLE );
-		}
-	}
-	if (USART_GetITStatus(USART1,USART_IT_RXNE)==SET)
-	{
-		receivedata = USART_ReceiveData(USART1);
-		if( xQueueSendFromISR( ReceiveQueue, &receivedata, &xHigherPriorityTaskWoken) != pdTRUE)
-		{
-			// Betelt a buffer
-
-			// olcsó megoldás :P
-			USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
-		}
-	}
-
-	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
-}
-*/
-
 extern uint8_t I2C_TransmitNReceive;
 extern xQueueHandle I2C_SendQueue;
 extern xQueueHandle I2C_ReceiveQueue;

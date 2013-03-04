@@ -39,6 +39,9 @@
 
 #include <stm32f10x.h>
 #include <btstack/hal_cpu.h>
+#include <FreeRTOSConfig.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 void hal_cpu_disable_irqs(){
 	__disable_irq();
@@ -50,6 +53,7 @@ void hal_cpu_enable_irqs(){
 
 void hal_cpu_enable_irqs_and_sleep(){
 	__enable_irq();
+	taskYIELD();
 }
 
 

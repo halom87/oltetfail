@@ -33,7 +33,7 @@
 /*
  *  hal_tick.c
  *
- *  Implementation using 250 ms ticks provided by OS
+ *  Implementation using 50 ms ticks provided by OS
  *
  */
 
@@ -43,7 +43,7 @@
 
 static void dummy_handler(void){};
 static void (*tick_handler)(void) = &dummy_handler;
-static uint32_t btstack_interval_in_ms = 250;
+static uint32_t btstack_interval_in_ms = 50;
 
 #define TASK_BTTICK_PRIORITY ( tskIDLE_PRIORITY + 4 )
 
