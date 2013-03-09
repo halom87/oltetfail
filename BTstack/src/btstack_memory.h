@@ -37,7 +37,7 @@
 /*
  *  btstsack_memory.h
  *
- *  @brief BTstack memory management via configurable memory pools
+ *
  *
  */
 
@@ -46,7 +46,7 @@
 #if defined __cplusplus
 extern "C" {
 #endif
-    
+
 void btstack_memory_init(void);
 
 void * btstack_memory_hci_connection_get(void);

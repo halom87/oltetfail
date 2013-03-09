@@ -1,6 +1,6 @@
 /*
     FreeRTOS V7.2.0 - Copyright (C) 2012 Real Time Engineers Ltd.
-	
+
 
     ***************************************************************************
      *                                                                       *
@@ -40,7 +40,7 @@
     FreeRTOS WEB site.
 
     1 tab == 4 spaces!
-    
+
     ***************************************************************************
      *                                                                       *
      *    Having a problem?  Start by reading the FAQ "My application does   *
@@ -50,17 +50,17 @@
      *                                                                       *
     ***************************************************************************
 
-    
-    http://www.FreeRTOS.org - Documentation, training, latest information, 
+
+    http://www.FreeRTOS.org - Documentation, training, latest information,
     license and contact details.
-    
+
     http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
     including FreeRTOS+Trace - an indispensable productivity tool.
 
-    Real Time Engineers ltd license FreeRTOS to High Integrity Systems, who sell 
-    the code with commercial support, indemnification, and middleware, under 
+    Real Time Engineers ltd license FreeRTOS to High Integrity Systems, who sell
+    the code with commercial support, indemnification, and middleware, under
     the OpenRTOS brand: http://www.OpenRTOS.com.  High Integrity Systems also
-    provide a safety engineered and independently SIL3 certified version under 
+    provide a safety engineered and independently SIL3 certified version under
     the SafeRTOS brand: http://www.SafeRTOS.com.
 */
 
@@ -73,7 +73,7 @@ extern "C" {
 #endif
 
 /*-----------------------------------------------------------
- * Port specific definitions.  
+ * Port specific definitions.
  *
  * The settings in this file configure FreeRTOS correctly for the
  * given hardware and compiler.
@@ -98,13 +98,14 @@ extern "C" {
 	typedef unsigned portLONG portTickType;
 	#define portMAX_DELAY ( portTickType ) 0xffffffff
 #endif
-/*-----------------------------------------------------------*/	
+/*-----------------------------------------------------------*/
 
 /* Architecture specifics. */
 #define portSTACK_GROWTH			( -1 )
-#define portTICK_RATE_MS			( ( portTickType ) 1000 / configTICK_RATE_HZ )		
+#define portTICK_RATE_MS			( ( portTickType ) 1000 / configTICK_RATE_HZ )
+#define portTICKS_PER_MS			( configTICK_RATE_HZ / ( portTickType ) 1000 )
 #define portBYTE_ALIGNMENT			8
-/*-----------------------------------------------------------*/	
+/*-----------------------------------------------------------*/
 
 
 /* Scheduler utilities. */
@@ -118,10 +119,10 @@ extern void vPortYieldFromISR( void );
 
 /* Critical section management. */
 
-/* 
+/*
  * Set basepri to portMAX_SYSCALL_INTERRUPT_PRIORITY without effecting other
  * registers.  r0 is clobbered.
- */ 
+ */
 #define portSET_INTERRUPT_MASK()						\
 	__asm volatile										\
 	(													\
@@ -129,10 +130,10 @@ extern void vPortYieldFromISR( void );
 		"	msr basepri, r0							\n" \
 		::"i"(configMAX_SYSCALL_INTERRUPT_PRIORITY):"r0"	\
 	)
-	
+
 /*
  * Set basepri back to 0 without effective other registers.
- * r0 is clobbered.  FAQ:  Setting BASEPRI to 0 is not a bug.  Please see 
+ * r0 is clobbered.  FAQ:  Setting BASEPRI to 0 is not a bug.  Please see
  * http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html before disagreeing.
  */
 #define portCLEAR_INTERRUPT_MASK()			\
@@ -143,8 +144,8 @@ extern void vPortYieldFromISR( void );
 		:::"r0"								\
 	)
 
-/* FAQ:  Setting BASEPRI to 0 in portCLEAR_INTERRUPT_MASK_FROM_ISR() is not a 
-bug.  Please see http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html before 
+/* FAQ:  Setting BASEPRI to 0 in portCLEAR_INTERRUPT_MASK_FROM_ISR() is not a
+bug.  Please see http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html before
 disagreeing. */
 #define portSET_INTERRUPT_MASK_FROM_ISR()		0;portSET_INTERRUPT_MASK()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)	portCLEAR_INTERRUPT_MASK();(void)x

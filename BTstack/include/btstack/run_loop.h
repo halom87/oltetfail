@@ -50,7 +50,7 @@
 #if defined __cplusplus
 extern "C" {
 #endif
-	
+
 typedef enum {
 	RUN_LOOP_POSIX = 1,
 	RUN_LOOP_COCOA,
@@ -64,7 +64,7 @@ typedef struct data_source {
 } data_source_t;
 
 typedef struct timer {
-    linked_item_t item; 
+    linked_item_t item;
 #ifdef HAVE_TIME
     struct timeval timeout;                  // <-- next timeout
 #endif
@@ -82,10 +82,10 @@ void run_loop_set_timer(timer_source_t *a, uint32_t timeout_in_ms);
 void run_loop_set_timer_handler(timer_source_t *ts, void (*process)(timer_source_t *_ts));
 
 // Add/Remove timer source.
-void run_loop_add_timer(timer_source_t *timer); 
+void run_loop_add_timer(timer_source_t *timer);
 int  run_loop_remove_timer(timer_source_t *timer);
 
-// Init must be called before any other run_loop call. 
+// Init must be called before any other run_loop call.
 // Use RUN_LOOP_EMBEDDED for embedded devices.
 void run_loop_init(RUN_LOOP_TYPE type);
 
@@ -111,9 +111,9 @@ uint32_t embedded_get_ticks(void);
 #ifdef EMBEDDED
 // Sets an internal flag that is checked in the critical section
 // just before entering sleep mode. Has to be called by the interupt
-// handler of a data source to signal the run loop that a new data 
+// handler of a data source to signal the run loop that a new data
 // is available.
-void     embedded_trigger(void);    
+void     embedded_trigger(void);
 #endif
 #if defined __cplusplus
 }

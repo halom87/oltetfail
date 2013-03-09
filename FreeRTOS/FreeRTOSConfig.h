@@ -89,10 +89,10 @@
 #define configUSE_IDLE_HOOK			0
 #define configUSE_TICK_HOOK			0
 #define configCPU_CLOCK_HZ			( ( unsigned long ) 64000000 )
-#define configTICK_RATE_HZ			( ( portTickType ) 1000 )
-#define configMAX_PRIORITIES		( ( unsigned portBASE_TYPE ) 8 )
+#define configTICK_RATE_HZ			( ( portTickType ) 10000 )
+#define configMAX_PRIORITIES		( ( unsigned portBASE_TYPE ) 5 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 256 )
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 12 * 1024 ) )
+#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 9 * 1024 ) )
 #define configMAX_TASK_NAME_LEN		( 16 )
 #define configUSE_TRACE_FACILITY	0
 #define configUSE_16_BIT_TICKS		0
@@ -102,6 +102,7 @@
 #define configUSE_CO_ROUTINES 		0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 
+#define configUSE_TIMERS 				0
 #define configUSE_MUTEXES				1
 #define configUSE_COUNTING_SEMAPHORES 	1
 #define configUSE_ALTERNATIVE_API 		0
@@ -120,6 +121,8 @@ to exclude the API function. */
 #define INCLUDE_vTaskSuspend			1
 #define INCLUDE_vTaskDelayUntil			1
 #define INCLUDE_vTaskDelay				1
+
+#define INCLUDE_xTimerGetTimerDaemonTaskHandle 0
 
 /* This is the raw value as per the Cortex-M3 NVIC.  Values can be 255
 (lowest) to 0 (1?) (highest). */

@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2011 by Matthias Ringwald
- * Customized by Laszlo Kundra (C)
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,29 +30,16 @@
  */
 
 /*
- *  hal_cpu.c
+ *  run_loop_ucos.h
  *
- *  Easy implementation
- *
+ *  Created by Kundra Laci
  */
 
-#include <stm32f10x.h>
-#include <btstack/hal_cpu.h>
-#include <FreeRTOSConfig.h>
+#pragma once
+
 #include <FreeRTOS.h>
+#include <queue.h>
 #include <task.h>
+#include <FreeRTOSConfig.h>
 
-void hal_cpu_disable_irqs(){
-	__disable_irq();
-}
-
-void hal_cpu_enable_irqs(){
-	__enable_irq();
-}
-
-void hal_cpu_enable_irqs_and_sleep(){
-	__enable_irq();
-	taskYIELD();
-}
-
-
+void run_loop_notify_incoming_transport_packet(void);

@@ -47,6 +47,8 @@ uint8_t initSensorACC(void)
 	WriteReg(MAG_I2C_ADDRESS,CRB_REG_M,0b00100000);//+-1.3Gauss
 	WriteReg(MAG_I2C_ADDRESS,MR_REG_M,0b00000000);//Continous mode
 	WriteReg(MAG_I2C_ADDRESS,CRA_REG_M,0b00010100);//Output rate 30Hz
+
+	return 0;
 }
 void inline readACC(uint8_t * data)
 {
