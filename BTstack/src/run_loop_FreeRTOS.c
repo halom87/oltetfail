@@ -52,7 +52,6 @@ static volatile data_source_t *transportDataSource = 0;
 *============================================================================*/
 #define MSG_QUEUE_BUFFER_SIZE 32
 
-#define MSG_ID_TRIGGER 					   10
 #define MSG_ID_INCOMING_TRANSPORT_PACKET   1
 #define MSG_ID_OUTGOING_RFCOMM_DATA        2
 
@@ -129,7 +128,7 @@ int run_loop_remove_timer(timer_source_t *ts)
 void embedded_trigger(void)
 {
 	portBASE_TYPE temp;
-	uint8_t id = MSG_ID_TRIGGER;
+	uint8_t id = MSG_ID_INCOMING_TRANSPORT_PACKET;
 	xQueueSendFromISR( messages, &id, &temp);
 }
 
