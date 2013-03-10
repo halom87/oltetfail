@@ -95,7 +95,6 @@ int main(void)
 	NVIC_Config();
 
 	DebugTimerInit();
-	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
 	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,NULL);
 
 	vTaskStartScheduler();
@@ -210,7 +209,7 @@ static void packet_handler (void * connection, uint8_t packet_type, uint16_t cha
 }
 
 static void  heartbeat_handler(struct timer *ts){
-
+	/*
     if (rfcomm_channel_id){
         static int counter = 0;
         char lineBuffer[30];
@@ -224,6 +223,7 @@ static void  heartbeat_handler(struct timer *ts){
 
     run_loop_set_timer(ts, HEARTBEAT_PERIOD_MS);
     run_loop_add_timer(ts);
+    */
 }
 
 static void prvBTCommTask (void* pvParameters)

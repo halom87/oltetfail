@@ -37,12 +37,14 @@ static void (*cts_irq_handler)(void) = dummy_handler;
  */
 void hal_uart_dma_init(void)
 {
+	portTickType temp;
+	temp = xTaskGetTickCount();
+	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
+	// Min 0.5 sec for reset
+	vTaskDelayUntil(&temp, 500 * portTICKS_PER_MS);
 	// Power up!
 	GPIO_SetBits(GPIOA, GPIO_Pin_4);
-	portTickType temp;
-
     // wait for Bluetooth to power up properly (1 sec)
-	temp = xTaskGetTickCount();
 	vTaskDelayUntil(&temp, 1000 * portTICKS_PER_MS);
 
     hal_uart_dma_set_baud(115200);
@@ -51,6 +53,7 @@ void hal_uart_dma_init(void)
 int hal_uart_dma_set_baud(uint32_t baud){
 
 	USART_InitTypeDef USART_InitStructure;
+	USART_ClockInitTypeDef usartClkInit;
     int result = 0;
 
     // Deinit
@@ -60,7 +63,17 @@ int hal_uart_dma_set_baud(uint32_t baud){
     USART_DeInit(USART1);
 
     // Init
-	USART_InitStructure.USART_BaudRate=baud;
+    /*
+    // This is tricky!!! Baud is divided by two, because clock is sensitive on both edge!!!
+    USART_ClockStructInit(&usartClkInit);
+	usartClkInit.USART_Clock = USART_Clock_Disable;
+	usartClkInit.USART_CPOL = USART_CPOL_Low;
+	usartClkInit.USART_CPHA = USART_CPHA_2Edge;
+	usartClkInit.USART_LastBit = USART_LastBit_Disable;
+
+    USART_InitStructure.USART_BaudRate=baud / 2;
+	*/
+    USART_InitStructure.USART_BaudRate=baud;
 	USART_InitStructure.USART_WordLength=USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits=USART_StopBits_1;
 	USART_InitStructure.USART_Parity=USART_Parity_No;
@@ -69,10 +82,14 @@ int hal_uart_dma_set_baud(uint32_t baud){
 
 	USART_Init(USART1,&USART_InitStructure);
 
+	USART_ClockInit(USART1, &usartClkInit);
+
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
 
 	USART_Cmd(USART1, ENABLE);
+
+	return baud;
 }
 
 void hal_uart_dma_set_block_received( void (*the_block_handler)(void)){

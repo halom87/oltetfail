@@ -141,7 +141,7 @@ void run_loop_execute(void)
 
     for(;;)
     {
-        res = xQueueReceive(messages, &event, 2);
+        res = xQueueReceive(messages, &event, 0);
 
         if(res == pdTRUE)
         {
