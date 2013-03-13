@@ -39,12 +39,13 @@
  *
  *  Adapter to use cc256x-based chipsets with BTstack
  */
- 
+
 #pragma once
 
 #include <stdint.h>
 #include "bt_control.h"
 #include "hci_transport.h"
+#include "../config.h"
 
 bt_control_t *bt_control_cc256x_instance(void);
 void bt_control_cc256x_set_power(int16_t power_in_dB);

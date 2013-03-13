@@ -78,9 +78,6 @@ static void prvSensorReadTask (void* pvParameters);
 
 xSemaphoreHandle xADCSemaphore = NULL;
 //Ez itt nem fog kelleni, át kell állítani az új bluetooth initjére
-#ifdef HC05_INIT
-const portCHAR init[]="AT+UART=38400,0,0\r\n";
-#endif
 
 int main(void)
 {
@@ -114,7 +111,7 @@ static void prvInitTask(void* pvParameters)
 	//taszk indítás
 	xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,NULL);
 	xTaskCreate(prvBTCommTask,(signed char*)"BT Comm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,NULL);
-	xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
+	//xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
 	//xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
 
 	vTaskDelete(NULL);
@@ -220,10 +217,10 @@ static void  heartbeat_handler(struct timer *ts){
             //printf("rfcomm_send_internal -> error %d", err);
         }
     }
-
+	*/
     run_loop_set_timer(ts, HEARTBEAT_PERIOD_MS);
     run_loop_add_timer(ts);
-    */
+
 }
 
 static void prvBTCommTask (void* pvParameters)

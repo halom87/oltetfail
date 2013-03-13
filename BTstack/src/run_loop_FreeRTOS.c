@@ -130,6 +130,8 @@ void embedded_trigger(void)
 	portBASE_TYPE temp;
 	uint8_t id = MSG_ID_INCOMING_TRANSPORT_PACKET;
 	xQueueSendFromISR( messages, &id, &temp);
+	// Context switch check
+	//portYIELD();
 }
 
 /*=============================================================================
@@ -141,7 +143,7 @@ void run_loop_execute(void)
 
     for(;;)
     {
-        res = xQueueReceive(messages, &event, 0);
+        res = xQueueReceive(messages, &event, 2);
 
         if(res == pdTRUE)
         {

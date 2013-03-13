@@ -53,7 +53,6 @@ void hal_uart_dma_init(void)
 int hal_uart_dma_set_baud(uint32_t baud){
 
 	USART_InitTypeDef USART_InitStructure;
-	USART_ClockInitTypeDef usartClkInit;
     int result = 0;
 
     // Deinit
@@ -63,16 +62,6 @@ int hal_uart_dma_set_baud(uint32_t baud){
     USART_DeInit(USART1);
 
     // Init
-    /*
-    // This is tricky!!! Baud is divided by two, because clock is sensitive on both edge!!!
-    USART_ClockStructInit(&usartClkInit);
-	usartClkInit.USART_Clock = USART_Clock_Disable;
-	usartClkInit.USART_CPOL = USART_CPOL_Low;
-	usartClkInit.USART_CPHA = USART_CPHA_2Edge;
-	usartClkInit.USART_LastBit = USART_LastBit_Disable;
-
-    USART_InitStructure.USART_BaudRate=baud / 2;
-	*/
     USART_InitStructure.USART_BaudRate=baud;
 	USART_InitStructure.USART_WordLength=USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits=USART_StopBits_1;
@@ -82,9 +71,7 @@ int hal_uart_dma_set_baud(uint32_t baud){
 
 	USART_Init(USART1,&USART_InitStructure);
 
-	USART_ClockInit(USART1, &usartClkInit);
-
-	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
 	USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
 
 	USART_Cmd(USART1, ENABLE);
