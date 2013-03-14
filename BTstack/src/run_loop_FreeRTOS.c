@@ -147,10 +147,10 @@ void run_loop_execute(void)
 
         if(res == pdTRUE)
         {
-            if((unsigned long)event == MSG_ID_INCOMING_TRANSPORT_PACKET)
-            {
+            //if((unsigned long)event == MSG_ID_INCOMING_TRANSPORT_PACKET)
+            //{
                 transportDataSource->process(transportDataSource);
-            }
+            //}
         }
 
         /* Process timers. */

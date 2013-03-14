@@ -79,6 +79,10 @@ static void prvSensorReadTask (void* pvParameters);
 xSemaphoreHandle xADCSemaphore = NULL;
 //Ez itt nem fog kelleni, át kell állítani az új bluetooth initjére
 
+xTaskHandle initTask;
+xTaskHandle ledTask;
+xTaskHandle BTTask;
+
 int main(void)
 {
 	//uint16_t kezdet, vege;
@@ -92,7 +96,7 @@ int main(void)
 	NVIC_Config();
 
 	DebugTimerInit();
-	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,NULL);
+	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,&initTask);
 
 	vTaskStartScheduler();
   while (1)
@@ -104,22 +108,23 @@ int main(void)
 }
 static void prvInitTask(void* pvParameters)
 {
+	portBASE_TYPE res = 0;
+
 	//inicializálás
 	initSensorACC();
 	initSensorGyro();
 
 	//taszk indítás
-	xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,NULL);
-	xTaskCreate(prvBTCommTask,(signed char*)"BT Comm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,NULL);
+	res = xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,&ledTask);
+	res = xTaskCreate(prvBTCommTask,(signed char*)"BTComm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,&BTTask);
 	//xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
 	//xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
 
-	vTaskDelete(NULL);
+	vTaskDelete(initTask);
 	while(1)
 	{
 
 	}
-
 }
 
 #define HEARTBEAT_PERIOD_MS 1000
