@@ -38,7 +38,7 @@
 #pragma once
 
 #include <FreeRTOS.h>
-#include <queue.h>
+#include <semphr.h>
 #include <task.h>
 #include <FreeRTOSConfig.h>
 

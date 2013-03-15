@@ -44,50 +44,23 @@
 #include "hci_transport.h"
 //#include "serial.h"
 
-static volatile linked_list_t timers;
-static volatile data_source_t *transportDataSource = 0;
+static linked_list_t timers;
+static linked_list_t data_sources;
 
-/*=============================================================================
-*  Run loop message queue.
-*============================================================================*/
-#define MSG_QUEUE_BUFFER_SIZE 32
-
-#define MSG_ID_INCOMING_TRANSPORT_PACKET   1
-#define MSG_ID_OUTGOING_RFCOMM_DATA        2
-
-xQueueHandle messages;
-
-/*=============================================================================
-=============================================================================*/
-void run_loop_notify_incoming_transport_packet(void)
-{
-	portBASE_TYPE temp;
-	uint8_t id = MSG_ID_INCOMING_TRANSPORT_PACKET;
-	xQueueSendFromISR( messages, &id, &temp);
-}
-
-/*=============================================================================
-=============================================================================*/
-void run_loop_notify_outgoing_rfcomm_data(void)
-{
-	portBASE_TYPE temp;
-	uint8_t id = MSG_ID_OUTGOING_RFCOMM_DATA;
-	xQueueSendFromISR( messages, &id, &temp);
-}
+xSemaphoreHandle xSemaphore;
 
 /*=============================================================================
 =============================================================================*/
 void run_loop_add_data_source(data_source_t *ds)
 {
-    transportDataSource = ds;
+    linked_list_add(&data_sources, (linked_item_t *) ds);
 }
 
 /*=============================================================================
 =============================================================================*/
 int run_loop_remove_data_source(data_source_t *ds)
 {
-	// Return whatever
-    return 0;
+	return linked_list_remove(&data_sources, (linked_item_t *) ds);
 }
 
 /*=============================================================================
@@ -95,7 +68,6 @@ int run_loop_remove_data_source(data_source_t *ds)
 void run_loop_add_timer(timer_source_t *ts)
 {
     linked_item_t *it;
-
     for(it = (linked_item_t *)&timers; it->next; it = it->next)
     {
         if(ts->timeout < ((timer_source_t *)it->next)->timeout)
@@ -120,40 +92,37 @@ void run_loop_set_timer(timer_source_t *ts, uint32_t timeout_in_ms)
 =============================================================================*/
 int run_loop_remove_timer(timer_source_t *ts)
 {
-    return linked_list_remove(&timers, (linked_item_t *) ts);
+	return linked_list_remove(&timers, (linked_item_t *) ts);
 }
 
 /*=============================================================================
 =============================================================================*/
 void embedded_trigger(void)
 {
+	// Give
 	portBASE_TYPE temp;
-	uint8_t id = MSG_ID_INCOMING_TRANSPORT_PACKET;
-	xQueueSendFromISR( messages, &id, &temp);
-	// Context switch check
-	//portYIELD();
+	xSemaphoreGiveFromISR(xSemaphore, &temp);
 }
 
 /*=============================================================================
 =============================================================================*/
 void run_loop_execute(void)
 {
-    uint8_t event;
-    portBASE_TYPE res;
+	data_source_t *ds;
 
     for(;;)
     {
-        res = xQueueReceive(messages, &event, 2);
+    	// block for a specific time if nothing arrives
+        if( xSemaphoreTake( xSemaphore, ( portTickType ) (10 * portTICKS_PER_MS) ) == pdTRUE );
 
-        if(res == pdTRUE)
-        {
-            //if((unsigned long)event == MSG_ID_INCOMING_TRANSPORT_PACKET)
-            //{
-                transportDataSource->process(transportDataSource);
-            //}
-        }
+        // process data
+		data_source_t *next;
+		for (ds = (data_source_t *) data_sources; ds != NULL ; ds = next){
+			next = (data_source_t *) ds->item.next; // cache pointer to next data_source to allow data source to remove itself
+			ds->process(ds);
+		}
 
-        /* Process timers. */
+        // process timers
         while(timers)
         {
             timer_source_t *ts = (timer_source_t *)timers;
@@ -168,9 +137,9 @@ void run_loop_execute(void)
 =============================================================================*/
 void run_loop_init(RUN_LOOP_TYPE type)
 {
-    timers = 0;
-
-    messages = xQueueCreate( MSG_QUEUE_BUFFER_SIZE, sizeof(uint8_t) );
+    timers = NULL;
+    data_sources = NULL;
+    vSemaphoreCreateBinary(xSemaphore);
 }
 
 /*=============================================================================
