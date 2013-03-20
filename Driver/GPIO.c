@@ -20,19 +20,19 @@ void IO_Config(void)
 	// Send to shutdown!
 	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 
-	// USART RX és CTS
+	// BT RX és CTS
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
-	// USART TX
+	// BT TX
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	// LEÉG ha ezt elállítod!!
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD; // !!!
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
-	// USART RTS
+	// BT RTS
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	// LEÉG ha ezt elállítod!!
@@ -69,5 +69,16 @@ void IO_Config(void)
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB,&GPIO_InitStructure);
 
+	// DEBUG RX
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_Init( GPIOA, &GPIO_InitStructure );
+
+	// BT TX
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
 }

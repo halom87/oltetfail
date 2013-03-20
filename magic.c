@@ -15,7 +15,7 @@
 #include <sys/times.h>
 #include <sys/unistd.h>
 #include "stm32f10x_usart.h"
-
+#include "SERIALDEBUG.h"
 
 #undef errno
 extern int errno;
@@ -30,12 +30,14 @@ char **environ = __env;
 
 int _write(int file, char *ptr, int len);
 
+/*
 void _exit(int status) {
     _write(1, "exit", 4);
     while (1) {
         ;
     }
 }
+*/
 
 int _close(int file) {
     return -1;
@@ -44,19 +46,22 @@ int _close(int file) {
  execve
  Transfer control to a new process. Minimal implementation (for a system without processes):
  */
+/*
 int _execve(char *name, char **argv, char **env) {
     errno = ENOMEM;
     return -1;
 }
+*/
 /*
  fork
  Create a new process. Minimal implementation (for a system without processes):
  */
-
+/*
 int _fork() {
     errno = EAGAIN;
     return -1;
 }
+*/
 /*
  fstat
  Status of an open file. For consistency with other minimal implementations in these examples,
@@ -72,11 +77,11 @@ int _fstat(int file, struct stat *st) {
  getpid
  Process-ID; this is sometimes used to generate strings unlikely to conflict with other processes. Minimal implementation, for a system without processes:
  */
-
+/*
 int _getpid() {
     return 1;
 }
-
+*/
 /*
  isatty
  Query whether output stream is a terminal. For consistency with the other minimal implementations,
@@ -99,21 +104,22 @@ int _isatty(int file) {
  kill
  Send a signal. Minimal implementation:
  */
+/*
 int _kill(int pid, int sig) {
     errno = EINVAL;
     return (-1);
 }
-
+*/
 /*
  link
  Establish a new name for an existing file. Minimal implementation:
  */
-
+/*
 int _link(char *old, char *new) {
     errno = EMLINK;
     return -1;
 }
-
+*/
 /*
  lseek
  Set position in a file. Minimal implementation:
@@ -138,7 +144,7 @@ caddr_t _sbrk(int incr) {
     }
     prev_heap_end = heap_end;
 
-char * stack = (char*) __get_MSP();
+    char * stack = (char*) __get_MSP();
      if (heap_end + incr >  stack)
      {
          _write (STDERR_FILENO, "Heap and stack collision\n", 25);
@@ -171,46 +177,48 @@ int _read(int file, char *ptr, int len) {
  Status of a file (by name). Minimal implementation:
  int    _EXFUN(stat,( const char *__path, struct stat *__sbuf ));
  */
-
+/*
 int _stat(const char *filepath, struct stat *st) {
     st->st_mode = S_IFCHR;
     return 0;
 }
-
+*/
 /*
  times
  Timing information for current process. Minimal implementation:
  */
-
+/*
 clock_t _times(struct tms *buf) {
     return -1;
 }
-
+*/
 /*
  unlink
  Remove a file's directory entry. Minimal implementation:
  */
+/*
 int _unlink(char *name) {
     errno = ENOENT;
     return -1;
 }
-
+*/
 /*
  wait
  Wait for a child process. Minimal implementation:
  */
+/*
 int _wait(int *status) {
     errno = ECHILD;
     return -1;
 }
-
+*/
 /*
  write
  Write a character to a file. `libc' subroutines will use this system routine for output to all files, including stdout
  Returns -1 on error or number of bytes sent
  */
-int _write(int file, char *ptr, int len) {
-    int n;
-	errno = EBADF;
-	return -1;
+int _write(int file, char *ptr, int len)
+{
+	Debug_PrintChars(ptr, len);
+	return len;
 }

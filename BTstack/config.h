@@ -6,8 +6,8 @@
 #define HAVE_EHCILL
 //#define HAVE_TIME
 
-// #define ENABLE_LOG_INFO
-// #define ENABLE_LOG_ERROR
+#define ENABLE_LOG_INFO
+#define ENABLE_LOG_ERROR
 
 // CC256x related
 #define CUSTOM_HCI_HIGH_SPEED_ENABLE 0

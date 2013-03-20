@@ -33,7 +33,16 @@ void NVIC_Config(void)
  	NVIC_Init(&NVIC_InitStructure);
 //*/
 
+ 	// BT
  	NVIC_InitStructure.NVIC_IRQChannel=USART1_IRQn;
+ 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;
+ 	NVIC_InitStructure.NVIC_IRQChannelSubPriority=0;
+ 	NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;
+ 	NVIC_Init(&NVIC_InitStructure);
+
+
+ 	// DEBUG
+ 	NVIC_InitStructure.NVIC_IRQChannel=USART2_IRQn;
  	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;
  	NVIC_InitStructure.NVIC_IRQChannelSubPriority=0;
  	NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;

@@ -32,6 +32,7 @@
 #include "DMA.h"
 #include "NVIC.h"
 #include "I2C.h"
+#include "SERIALDEBUG.h"
 #include "MadgwickAHRS.h"
 #include "lsm303dlhc_driver.h"
 #include "l3g4200d_driver.h"
@@ -55,10 +56,10 @@
 #include "sdp.h"
 #include "config.h"
 
-
 extern __IO uint16_t ADCValue[2];
 volatile uint16_t eredmeny,kezdet, vege;
 #define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 1  )
+#define TASK_DEBUG_PRIORITY ( tskIDLE_PRIORITY + 1  )
 #define TASK_PWMSET_PRIORITY ( tskIDLE_PRIORITY  + 1 )
 #define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 3 )
 #define TASK_ADCREAD_PRIORITY ( tskIDLE_PRIORITY + 2 )
@@ -82,6 +83,9 @@ xSemaphoreHandle xADCSemaphore = NULL;
 xTaskHandle initTask;
 xTaskHandle ledTask;
 xTaskHandle BTTask;
+xTaskHandle DebugTask;
+
+portTASK_FUNCTION_PROTO( vDebugTask, pvParameters );
 
 int main(void)
 {
@@ -90,10 +94,13 @@ int main(void)
 	RCC_Config();
 
 	IO_Config();
+	Debug_Init();
 	PWM_Config();
 	DMA_Config();
 	I2C_Config();
 	NVIC_Config();
+
+	printf("Booting...\n");
 
 	DebugTimerInit();
 	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,&initTask);
@@ -117,6 +124,8 @@ static void prvInitTask(void* pvParameters)
 	//taszk indítás
 	res = xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,&ledTask);
 	res = xTaskCreate(prvBTCommTask,(signed char*)"BTComm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,&BTTask);
+	res = xTaskCreate(vDebugTask, (signed char *) "DEBUG", configMINIMAL_STACK_SIZE, NULL, TASK_DEBUG_PRIORITY, &DebugTask );
+
 	//xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
 	//xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
 
