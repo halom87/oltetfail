@@ -334,7 +334,7 @@ static void prvPWMSetTask (void* pvParameters)
 static void prvLEDTask (void* pvParameters)
 {
 	const portCHAR teszt[]="Hello World!\r\n";
-	uint8_t i;
+	uint8_t i = 0;
 	portTickType xLastWakeTime;
 	const portTickType xFrequency = 500;
 	xLastWakeTime=xTaskGetTickCount();
@@ -352,6 +352,11 @@ static void prvLEDTask (void* pvParameters)
 		}
 
 		//Debug_Printf(":) ");
+
+		if (i++ >= 15)
+		{
+			hci_discoverable_control(1);
+		}
 
 		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICKS_PER_MS);
 	}

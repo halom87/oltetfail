@@ -10,8 +10,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-extern void hal_cpu_set_uart_needed_during_sleep(uint8_t enabled);
-
 void dummy_handler(void){};
 
 // rx state
@@ -88,14 +86,21 @@ void hal_uart_dma_set_block_sent( void (*the_block_handler)(void)){
 }
 
 void hal_uart_dma_set_csr_irq_handler( void (*the_irq_handler)(void)){
-    if (the_irq_handler){
-        NVIC_EnableIRQ(EXTI15_10_IRQn);
+	NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	if (the_irq_handler){
+    	// Enable and set EXTI15_10 Interrupt to the lowest priority
+    	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    	NVIC_Init(&NVIC_InitStructure);
         cts_irq_handler = the_irq_handler;
         return;
     }
 
-    NVIC_DisableIRQ(EXTI15_10_IRQn);
-    cts_irq_handler = dummy_handler;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+	NVIC_Init(&NVIC_InitStructure);
+	cts_irq_handler = dummy_handler;
 }
 
 /**********************************************************************/
@@ -112,8 +117,6 @@ void hal_uart_dma_shutdown(void) {
 }
 
 void hal_uart_dma_send_block(const uint8_t * data, uint16_t len){
-
-    //printf("hal_uart_dma_send_block, size %u\n\r", len);
 
     // disable TX interrupts
     USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
@@ -149,7 +152,6 @@ void hal_uart_dma_receive_block(uint8_t *buffer, uint16_t len){
 }
 
 void hal_uart_dma_set_sleep(uint8_t sleep){
-    //hal_cpu_set_uart_needed_during_sleep(!sleep);
 	// do nothing
 }
 
