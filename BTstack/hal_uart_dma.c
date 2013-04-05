@@ -113,7 +113,7 @@ void hal_uart_dma_shutdown(void) {
 
 void hal_uart_dma_send_block(const uint8_t * data, uint16_t len){
 
-    // printf("hal_uart_dma_send_block, size %u\n\r", len);
+    //printf("hal_uart_dma_send_block, size %u\n\r", len);
 
     // disable TX interrupts
     USART_ITConfig(USART1, USART_IT_TXE, DISABLE);

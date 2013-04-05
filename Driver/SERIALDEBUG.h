@@ -1,8 +1,11 @@
 /*
  * debug.h
  *
- *  Created on: Feb 9, 2011
- *      Author: James
+ *		Project: Pilo
+ *  	Original Project: LamborjohnnyII
+ *      Author: Laci Kundra
+ *      Mod: Debug to memory
+ *
  */
 
 #ifndef DEBUG_H_

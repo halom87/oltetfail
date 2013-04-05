@@ -8,6 +8,7 @@
 
 #define ENABLE_LOG_INFO
 #define ENABLE_LOG_ERROR
+//#define ENABLE_LOG_DEBUG
 
 // CC256x related
 #define CUSTOM_HCI_HIGH_SPEED_ENABLE 0

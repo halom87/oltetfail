@@ -220,5 +220,6 @@ int _wait(int *status) {
 int _write(int file, char *ptr, int len)
 {
 	Debug_PrintChars(ptr, len);
+	Debug_PrintChars("\r", 1);
 	return len;
 }

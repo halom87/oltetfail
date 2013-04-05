@@ -4,6 +4,7 @@
  *		Project: Pilo
  *  	Original Project: LamborjohnnyII
  *      Author: Laci Kundra
+ *      Mod: Debug to memory
  *
  */
 #include <stdarg.h>
@@ -23,7 +24,8 @@ void vNum2String( char *s, uint8_t *pPos, uint32_t u32Number, uint8_t u8Base);
 void USART2_Init( void );
 
 // Total buffer size for all debug messages.
-#define DEBUG_QUEUE_SIZE	512
+#define DEBUG_QUEUE_SIZE	1024
+
 xQueueHandle xDebugQueue;
 xQueueHandle xControlQueue;
 
@@ -42,7 +44,7 @@ void USART2_Init( void ) {
     USART_InitTypeDef USART_InitStructure;
 
     // USARTx configuration
-    USART_InitStructure.USART_BaudRate = 115200;
+    USART_InitStructure.USART_BaudRate = 9600;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -70,6 +72,7 @@ portTASK_FUNCTION( vDebugTask, pvParameters ) {
 	( void ) pvParameters;
 
     USART_ITConfig( USART2, USART_IT_RXNE, ENABLE );
+
 	Debug_String( "Debug task started.\r\n");
 	bytes=0;
 
@@ -195,6 +198,7 @@ void USART2_IRQHandler( void ) {
 				USART_ITConfig( USART2, USART_IT_TXE, DISABLE );
 			}
 		}
+		USART_ClearFlag(USART2, USART_FLAG_TXE );
 	}
 
 	++uart2_cnt;

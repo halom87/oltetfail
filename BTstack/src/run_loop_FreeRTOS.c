@@ -113,7 +113,7 @@ void run_loop_execute(void)
     for(;;)
     {
     	// block for a specific time if nothing arrives
-        if( xSemaphoreTake( xSemaphore, ( portTickType ) (10 * portTICKS_PER_MS) ) == pdTRUE );
+        if( xSemaphoreTake( xSemaphore, ( portTickType ) (4 * portTICKS_PER_MS) ) == pdTRUE );
 
         // process data
 		data_source_t *next;
