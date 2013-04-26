@@ -10,41 +10,33 @@
 
 void IO_Config(void)
 {
+
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	// BT power on
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
-	// Send to shutdown!
-	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
+	while (GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_4))
+		GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 
-	// BT RX és CTS
+	// USART RX és CTS
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
-	// BT TX
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	// USART TX és RTS
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	// LEÉG ha ezt elállítod!!
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD; // !!!
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_Init( GPIOA, &GPIO_InitStructure );
-
-	// BT RTS
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	// LEÉG ha ezt elállítod!!
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // !!!
-	GPIO_Init( GPIOA, &GPIO_InitStructure );
-	GPIO_ResetBits(GPIOA, GPIO_Pin_12);
 
 	// LED 1,2
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4; //| GPIO_Pin_2;
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_0 | GPIO_Pin_1;
@@ -62,6 +54,18 @@ void IO_Config(void)
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB,&GPIO_InitStructure);
 
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;
+	GPIO_InitStructure.GPIO_Mode=GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Mode=GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+
+
 
 	//I2C
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_10 | GPIO_Pin_11;
@@ -69,16 +73,5 @@ void IO_Config(void)
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB,&GPIO_InitStructure);
 
-	// DEBUG RX
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init( GPIOA, &GPIO_InitStructure );
-
-	// BT TX
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_Init( GPIOA, &GPIO_InitStructure );
 
 }

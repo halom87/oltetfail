@@ -40,7 +40,6 @@ uint8_t initSensorGyro(void)
 	L3G4200D_WriteReg(L3G4200D_CTRL_REG5,0x00); //No FIFO no hpf, no int
 	L3G4200D_WriteReg(L3G4200D_CTRL_REG1,0b10001111); //No HPF filter
 
-	return 0;
 }
 void inline ReadGyro(uint8_t * data)
 {

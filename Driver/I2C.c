@@ -45,30 +45,47 @@ void I2C_Config(void)
 }
 
 
+uint8_t i2cDebug;
+
 uint8_t I2C_BufferRead(uint8_t* Data, uint8_t deviceAddress, uint8_t ReadAddr, uint8_t len)
 {
 	int i=0;
+	uint8_t innerData[2];
 	if (xSemaphoreTake(I2CBusy,portMAX_DELAY))
 	{
+
 	/*	for (i=0; i<len; i++)
 		{*/
+			i2cDebug=1;
 			I2C_TransmitNReceive=0;
 			while (I2C_GetFlagStatus(I2C2,I2C_FLAG_BUSY));
 			xQueueSend(I2C_SendQueue,&deviceAddress,0);
 			if (len>1)ReadAddr|=0x80;
 			xQueueSend(I2C_SendQueue,&ReadAddr,0);
-
+			I2C_AcknowledgeConfig(I2C2, ENABLE);
 			//I2C_ClearFlag(I2C2,I2C_FLAG_AF);
-			if (len==1) I2C_AcknowledgeConfig(I2C2, DISABLE);
-			else I2C_AcknowledgeConfig(I2C2, ENABLE);
-
 			I2C_ITConfig(I2C2,I2C_IT_EVT,ENABLE);
-			I2C_DMAReceive(Data,len);
+			if (len==1)
+					I2C_DMAReceive(innerData,2);
+				//I2C_AcknowledgeConfig(I2C2, DISABLE);
+			else
+				I2C_DMAReceive(Data,len);
 			I2C_GenerateSTART(I2C2, ENABLE);
-			xSemaphoreTake(I2C_TransferComplete,portMAX_DELAY);
+			if(xSemaphoreTake(I2C_TransferComplete,1000)==pdFALSE)
+			{
+				if (i2cDebug==1)
+				{
+					xSemaphoreGive(I2CBusy);
+					return 1;
+				}
+			}
 			//xQueueReceive(I2C_ReceiveQueue,(Data + i),portMAX_DELAY);
 	        /* Make sure that the STOP bit is cleared by Hardware before CR1 write access */
 	        while ((I2C2->CR1&0x200) == 0x200);
+	        if (len==1)
+	        {
+	        	Data[0]=innerData[0];
+	        }
 
 		//}
 

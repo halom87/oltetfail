@@ -16,13 +16,14 @@
 // Header files
 
 #include "MadgwickAHRS.h"
+#include "stm32f10x.h"
 #include <errno.h>
 #include <math.h>
 
 //---------------------------------------------------------------------------------------------------
 // Definitions
 
-#define sampleFreq	512.0f		// sample frequency in Hz
+#define sampleFreq	400.0f		// sample frequency in Hz
 #define betaDef		0.1f		// 2 * proportional gain
 
 //---------------------------------------------------------------------------------------------------
@@ -217,17 +218,21 @@ void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, flo
 
 
 float invSqrt(float x) {
-	float halfx = 0.5f * x;
-	float y = x;
-
-	long i = *(long*)&y;
-	i = 0x5f3759df - (i>>1);
-	y = *(float*)&i;
-	y = y * (1.5f - (halfx * y * y));
-
-	return y;
+	   uint32_t i = 0x5F1F1412 - (*(uint32_t*)&x >> 1);
+	   float tmp = *(float*)&i;
+	   return tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
 }
 
+void quat_2_euler(float e[3])
+{
+   float sqw = q0*q0;
+   float sqx = q1*q1;
+   float sqy = q2*q2;
+   float sqz = q3*q3;
+   e[0] = atan2f(2.f * (q1*q2 + q3*q0), sqx - sqy - sqz + sqw);
+   e[1] = asinf(-2.f * (q1*q3 - q2*q0));
+   e[2] = atan2f(2.f * (q2*q3 + q1*q0), -sqx - sqy + sqz + sqw);
+}
 
 //====================================================================================================
 // END OF CODE

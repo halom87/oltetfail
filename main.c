@@ -20,6 +20,8 @@
   */
 //#define HC05_INIT
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "math.h"
 #include "stm32f10x.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -32,40 +34,30 @@
 #include "DMA.h"
 #include "NVIC.h"
 #include "I2C.h"
-#include "SERIALDEBUG.h"
 #include "MadgwickAHRS.h"
 #include "lsm303dlhc_driver.h"
 #include "l3g4200d_driver.h"
+//#include "SERIALDEBUG.h"
 
-#include <stdint.h>
+#include "USART.h"
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "bt_control_cc256x.h"
-
-#include <btstack/hci_cmds.h>
-#include <btstack/run_loop.h>
-#include <btstack/sdp_util.h>
-
-#include "hci.h"
-#include "l2cap.h"
-#include "btstack_memory.h"
-#include "remote_device_db.h"
-#include "rfcomm.h"
-#include "sdp.h"
-#include "config.h"
 
 extern __IO uint16_t ADCValue[2];
 volatile uint16_t eredmeny,kezdet, vege;
+SensorData_t SensorData;
+xSemaphoreHandle SensorDataMutex;
+xQueueHandle DebugSendQueue;
+
 #define TASK_LED_PRIORITY ( tskIDLE_PRIORITY + 1  )
-#define TASK_DEBUG_PRIORITY ( tskIDLE_PRIORITY + 1  )
 #define TASK_PWMSET_PRIORITY ( tskIDLE_PRIORITY  + 1 )
-#define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 3 )
+#define TASK_BTCOMM_PRIORITY ( tskIDLE_PRIORITY  + 1 )
 #define TASK_ADCREAD_PRIORITY ( tskIDLE_PRIORITY + 2 )
 #define TASK_ADCSTART_PRIORITY ( tskIDLE_PRIORITY + 1 )
 #define TASK_INIT_PRIORITY (tskIDLE_PRIORITY + 1)
-#define TASK_SENSORREAD_PRIORITY (tskIDLE_PRIORITY + 3)
+#define TASK_AHRS_PRIORITY (tskIDLE_PRIORITY + 2)
+#define TASK_SENSORREAD_PRIORITY (tskIDLE_PRIORITY + 0)
+
 //LED villogtató, fut-e az oprendszer
 static void prvLEDTask (void *pvParameters);
 //PWM beállító taszk, egyelõre mind a négy motorra ugyanazt
@@ -76,34 +68,32 @@ static void prvInitTask (void* pvParameters);
 static void prvBTCommTask (void* pvParameters);
 //itt képne kiolvasni a szenzorokat
 static void prvSensorReadTask (void* pvParameters);
+//AHRS quaternio számoló
+static void prvAHRSTask (void* pvParameters);
+//debug uzenetkuldo a szabalyozohoz
+static void prvDebugSender (void* pvParameters);
 
-xSemaphoreHandle xADCSemaphore = NULL;
 //Ez itt nem fog kelleni, át kell állítani az új bluetooth initjére
-
-xTaskHandle initTask;
-xTaskHandle ledTask;
-xTaskHandle BTTask;
-xTaskHandle DebugTask;
-
-portTASK_FUNCTION_PROTO( vDebugTask, pvParameters );
+#ifdef HC05_INIT
+const portCHAR init[]="AT+UART=38400,0,0\r\n";
+#endif
 
 int main(void)
 {
 	//uint16_t kezdet, vege;
-	vSemaphoreCreateBinary(xADCSemaphore);
 	RCC_Config();
 
 	IO_Config();
 	Debug_Init();
+	UART_Config();
 	PWM_Config();
 	DMA_Config();
 	I2C_Config();
 	NVIC_Config();
 
-	printf("Booting...\n");
-
 	DebugTimerInit();
-	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,&initTask);
+	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
+	xTaskCreate(prvInitTask,(signed char*)"INIT", configMINIMAL_STACK_SIZE,NULL,TASK_INIT_PRIORITY,NULL);
 
 	vTaskStartScheduler();
   while (1)
@@ -115,186 +105,103 @@ int main(void)
 }
 static void prvInitTask(void* pvParameters)
 {
-	portBASE_TYPE res = 0;
+#ifdef HC05_INIT
+	uint8_t i;
+	for(i=0;init[i]!='\n';i++)
+	{
+		xQueueSend(TransmitQueue,init+i,( portTickType )0);
+	}
 
+	xQueueSend(TransmitQueue,init+i,( portTickType )0);
+
+	UARTStartSend();
+#endif
+	//UART_StartSend("AT+AB DefaultLocalName Pilo\n\r", 0, 0);
+	//UART_StartSend("AT+AB LocalName Pilo\n\r", 0, 0);
 	//inicializálás
+	UART_StartSend("PiloCopter v0.1 commuinication test...\n\r", 0, 0);
 	initSensorACC();
 	initSensorGyro();
+	//SensorMutex
+	SensorDataMutex= xSemaphoreCreateMutex();
+	xSemaphoreGive(SensorDataMutex);
+	//DebugQueue = xQueueCreate( 3, sizeof( double ) );
 
 	//taszk indítás
-	res = xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,&ledTask);
-	res = xTaskCreate(prvBTCommTask,(signed char*)"BTComm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,&BTTask);
-	res = xTaskCreate(vDebugTask, (signed char *) "DEBUG", configMINIMAL_STACK_SIZE, NULL, TASK_DEBUG_PRIORITY, &DebugTask );
-
-	//xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE,NULL,TASK_PWMSET_PRIORITY,NULL);
-	//xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE,NULL,TASK_SENSORREAD_PRIORITY,NULL);
-
-	vTaskDelete(initTask);
+	xTaskCreate(prvLEDTask,(signed char*)"LED", configMINIMAL_STACK_SIZE,NULL,TASK_LED_PRIORITY,NULL);
+	//xTaskCreate(prvBTCommTask,(signed char*)"BT Comm", configMINIMAL_STACK_SIZE,NULL,TASK_BTCOMM_PRIORITY,NULL);
+	xTaskCreate(prvPWMSetTask,(signed char*)"PWM Set", configMINIMAL_STACK_SIZE+128,NULL,TASK_PWMSET_PRIORITY,NULL);
+	xTaskCreate(prvSensorReadTask,(signed char*)"Sensor Read", configMINIMAL_STACK_SIZE+128,NULL,TASK_SENSORREAD_PRIORITY,NULL);
+	//xTaskCreate(prvDebugSender, (signed char*)"Debug",configMINIMAL_STACK_SIZE,NULL,tskIDLE_PRIORITY,NULL);
+	vTaskDelete(NULL);
 	while(1)
 	{
 
 	}
+
 }
+int8_t DebugSendBuffer[64];
+static void prvAHRSTask (void* pvParameters)
+{
+	static SensorData_t SensorDataLocal;
+	static uint16_t counter=0;
+	static float e[3];
+	portTickType xLastWakeTime;
+	xLastWakeTime=xTaskGetTickCount();
+	while (1)
+	{
+		if (xSemaphoreTake(SensorDataMutex,1)==pdTRUE)
+		{
+			SensorDataLocal=SensorData;
+			xSemaphoreGive(SensorDataMutex);
+		}
+		MadgwickAHRSupdate(SensorDataLocal.Gyro.AXIS_X,SensorDataLocal.Gyro.AXIS_Y,SensorDataLocal.Gyro.AXIS_Z,SensorDataLocal.Acc.AXIS_X,SensorDataLocal.Acc.AXIS_Y,SensorDataLocal.Acc.AXIS_Z,SensorDataLocal.Mag.AXIS_X,SensorDataLocal.Mag.AXIS_Y,SensorDataLocal.Mag.AXIS_Z);
+		counter++;
+		if (counter==1000)
+		{
+			counter=0;
+			quat_2_euler(e);
+			e[0]=e[0]*180/M_PI;
+			e[1]=e[1]*180/M_PI;
+			e[2]=e[2]*180/M_PI;
+			sprintf(DebugSendBuffer,"%f.3 %f.3 %f.3 \r\n",e[0],e[1],e[2]);
+			UART_StartSend(DebugSendBuffer,0,0);
 
-#define HEARTBEAT_PERIOD_MS 1000
+		}
 
-static uint8_t   rfcomm_channel_nr = 1;
-static uint16_t  rfcomm_channel_id;
-static uint8_t   spp_service_buffer[100];
 
-// Bluetooth logic
-static void packet_handler (void * connection, uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    bd_addr_t event_addr;
-    uint8_t   rfcomm_channel_nr;
-    uint16_t  mtu;
 
-	switch (packet_type) {
-		case HCI_EVENT_PACKET:
-			switch (packet[0]) {
 
-				case BTSTACK_EVENT_STATE:
-					// bt stack activated, get started - set local name
-					if (packet[2] == HCI_STATE_WORKING) {
-                        hci_send_cmd(&hci_write_local_name, "Kvadrokopter");
-					}
-					break;
 
-				case HCI_EVENT_COMMAND_COMPLETE:
-					if (COMMAND_COMPLETE_EVENT(packet, hci_read_bd_addr)){
-                        bt_flip_addr(event_addr, &packet[6]);
-                        //printf("BD-ADDR: %s\n\r", bd_addr_to_str(event_addr));
-                        break;
-                    }
-					if (COMMAND_COMPLETE_EVENT(packet, hci_write_local_name)){
-                        hci_discoverable_control(1);
-                        break;
-                    }
-                    break;
 
-				case HCI_EVENT_LINK_KEY_REQUEST:
-					// deny link key request
-                    //printf("Link key request\n\r");
-                    bt_flip_addr(event_addr, &packet[2]);
-					hci_send_cmd(&hci_link_key_request_negative_reply, &event_addr);
-					break;
 
-				case HCI_EVENT_PIN_CODE_REQUEST:
-					// inform about pin code request
-                    //printf("Pin code request - using '0000'\n\r");
-                    bt_flip_addr(event_addr, &packet[2]);
-					hci_send_cmd(&hci_pin_code_request_reply, &event_addr, 4, "0000");
-					break;
 
-                case RFCOMM_EVENT_INCOMING_CONNECTION:
-					// data: event (8), len(8), address(48), channel (8), rfcomm_cid (16)
-					bt_flip_addr(event_addr, &packet[2]);
-					rfcomm_channel_nr = packet[8];
-					rfcomm_channel_id = READ_BT_16(packet, 9);
-					//printf("RFCOMM channel %u requested for %s\n\r", rfcomm_channel_nr, bd_addr_to_str(event_addr));
-                    rfcomm_accept_connection_internal(rfcomm_channel_id);
-					break;
+		vTaskDelayUntil(&xLastWakeTime,1* portTICK_RATE_MS);
 
-				case RFCOMM_EVENT_OPEN_CHANNEL_COMPLETE:
-					// data: event(8), len(8), status (8), address (48), server channel(8), rfcomm_cid(16), max frame size(16)
-					if (packet[2]) {
-						//printf("RFCOMM channel open failed, status %u\n\r", packet[2]);
-					} else {
-						rfcomm_channel_id = READ_BT_16(packet, 12);
-						mtu = READ_BT_16(packet, 14);
-						//printf("\n\rRFCOMM channel open succeeded. New RFCOMM Channel ID %u, max frame size %u\n\r", rfcomm_channel_id, mtu);
-					}
-					break;
 
-                case RFCOMM_EVENT_CHANNEL_CLOSED:
-                    rfcomm_channel_id = 0;
-                    break;
-
-                default:
-                    break;
-			}
-            break;
-
-        default:
-            break;
 	}
 }
-
-static void  heartbeat_handler(struct timer *ts){
-	/*
-    if (rfcomm_channel_id){
-        static int counter = 0;
-        char lineBuffer[30];
-        //sprintf(lineBuffer, "BTstack counter %04u\n\r", ++counter);
-        //printf(lineBuffer);
-        int err = rfcomm_send_internal(rfcomm_channel_id, (uint8_t*) lineBuffer, strlen(lineBuffer));
-        if (err) {
-            //printf("rfcomm_send_internal -> error %d", err);
-        }
-    }
-	*/
-    run_loop_set_timer(ts, HEARTBEAT_PERIOD_MS);
-    run_loop_add_timer(ts);
-
-}
-
+uint8_t recvTemp[128];
 static void prvBTCommTask (void* pvParameters)
 {
 	portTickType xLastWakeTime;
+	uint8_t HCI_Read_Local_Name[3];
+	uint8_t recvPos = 0;
+
 	xLastWakeTime=xTaskGetTickCount();
 
+	HCI_Read_Local_Name[0] = 0x00;
+	HCI_Read_Local_Name[1] = 0x14;
+	HCI_Read_Local_Name[2] = 0x00;
 
-	/// GET STARTED with BTstack ///
-	btstack_memory_init();
-    run_loop_init(RUN_LOOP_EMBEDDED);
-
-    // init HCI
-	hci_transport_t    * transport = hci_transport_h4_dma_instance();
-	bt_control_t       * control   = bt_control_cc256x_instance();
-    hci_uart_config_t  * config    = hci_uart_config_cc256x_instance();
-    remote_device_db_t * remote_db = (remote_device_db_t *) &remote_device_db_memory;
-	hci_init(transport, config, control, remote_db);
-
-    // use eHCILL
-    bt_control_cc256x_enable_ehcill(1);
-
-    // init L2CAP
-    l2cap_init();
-    l2cap_register_packet_handler(packet_handler);
-
-    // init RFCOMM
-    rfcomm_init();
-    rfcomm_register_packet_handler(packet_handler);
-    rfcomm_register_service_internal(NULL, rfcomm_channel_nr, 100);  // reserved channel, mtu=100
-
-    // init SDP, create record for SPP and register with SDP
-    sdp_init();
-	memset(spp_service_buffer, 0, sizeof(spp_service_buffer));
-    service_record_item_t * service_record_item = (service_record_item_t *) spp_service_buffer;
-    sdp_create_spp_service( (uint8_t*) &service_record_item->service_record, 1, "SPP Counter");
-    sdp_register_service_internal(NULL, service_record_item);
-
-    // set one-shot timer
-    timer_source_t heartbeat;
-    heartbeat.process = &heartbeat_handler;
-    run_loop_set_timer(&heartbeat, HEARTBEAT_PERIOD_MS);
-    run_loop_add_timer(&heartbeat);
-
-    // ready - enable irq used in h4 task
-    __enable_irq();
-
- 	// turn on!
-	hci_power_control(HCI_POWER_ON);
-
-    // go!
-    run_loop_execute();
+	vTaskDelayUntil(&xLastWakeTime,500);
+	UART_StartSend(HCI_Read_Local_Name, 0, 3);
 
 	for(;;)
 	{
-		vTaskDelayUntil(&xLastWakeTime,10 * portTICKS_PER_MS);
+		recvPos += UART_TryReceive(recvTemp, recvPos, -1, portMAX_DELAY);
+		vTaskDelayUntil(&xLastWakeTime,100);
 	}
-
-    // happy compiler!
-    return;
 }
 
 //debug gaz valtozo, bluetoothon keresztul valtoztathato
@@ -305,55 +212,72 @@ static void prvPWMSetTask (void* pvParameters)
 	static uint8_t gaz=1;
 	portTickType xLastWakeTime;
 	xLastWakeTime=xTaskGetTickCount();
-	uint8_t percent=0;
 	while (1)
 	{
-		percent=0;
-		if (counter<60) counter++;
-		else if ((counter<69
-				+6))
+		uint8_t i;
+		static int8_t percent=0;
+		char ch=0;
+		int8_t buffer[64];
+		static uint8_t tmp=0;
+		//percent=0;
+		/*while (tmp<4)
+		{
+			percent=10;
+
+			tmp++;
+		}
+		/**/
+		for (i=0;i<UART_ReceiveControlChar(buffer);i++)
 		{
 
-			percent=/*0;//*/gaz*10;
-			gaz+=1;
+			if (buffer[i]=='w')
+				percent+=5;
+			if (buffer[i]=='s')
+				percent-=5;
+			if (percent<0) percent=0;
+			if (percent>20) percent=20;
+			//sprintf(DebugSendBuffer,"Throttle %d\r\n", percent);
+			//UART_StartSend(DebugSendBuffer,0,0);
+		}//*/
+		if (percent!=0)
+		{
+			sprintf(DebugSendBuffer,"Throttle %d\r\n", percent);
+			UART_StartSend(DebugSendBuffer,0,0);
 			PWM_SetDutyCycle(percent);
-			counter++;
-		}
-		else if (counter<90 )
-			{
-			counter++;
-			}
-		//gege szerint ez igy jo lesz
-		else PWM_SetDutyCycle(0);
 
-		vTaskDelayUntil(&xLastWakeTime,1000 * portTICKS_PER_MS);
+		}
+		vTaskDelayUntil(&xLastWakeTime,1000*portTICK_RATE_MS);
 	}
 }
-
+SensorData_t SensorData;
 static void prvLEDTask (void* pvParameters)
 {
+	int8_t dbg;
 	const portCHAR teszt[]="Hello World!\r\n";
 	uint8_t i;
 	portTickType xLastWakeTime;
-	const portTickType xFrequency = 200;
+	const portTickType xFrequency = 500;
 	xLastWakeTime=xTaskGetTickCount();
 	for( ;; )
 	{
-		if(GPIO_ReadOutputDataBit(GPIOA,GPIO_Pin_1))  //toggle led
+		char c;
+		if(GPIO_ReadOutputDataBit(GPIOC,GPIO_Pin_4))  //toggle led
 		{
-			GPIO_ResetBits(GPIOA, GPIO_Pin_1); //set to zero
-			GPIO_ResetBits(GPIOA, GPIO_Pin_2); //set to zero
+			GPIO_ResetBits(GPIOC, GPIO_Pin_4); //set to zero
 		}
 		else
 		{
-			GPIO_SetBits(GPIOA,GPIO_Pin_1); //set to one
-			GPIO_SetBits(GPIOA,GPIO_Pin_2); //set to one
+			GPIO_SetBits(GPIOC,GPIO_Pin_4); //set to one
 		}
-
-		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICKS_PER_MS);
+		//dbg='a';
+		//Debug_String_Length( &dbg , 1);
+		vTaskDelayUntil(&xLastWakeTime,xFrequency * portTICK_RATE_MS);
 	}
 }
 //szenzor kiolvasas
+#define ACC_MAX 2.0
+#define MAG_MAX 1.3
+#define GYRO_MAX 250.0
 static void prvSensorReadTask (void* pvParameters)
 {
 	portTickType xLastWakeTime;
@@ -363,6 +287,7 @@ static void prvSensorReadTask (void* pvParameters)
 	MagAxesRaw_t MagAxes;
 	AxesRaw_t GyroAxes;
 	uint8_t status;
+	static uint8_t AHRSstart=0;
 	xLastWakeTime=xTaskGetTickCount();
 	while(1)
 	{
@@ -370,7 +295,7 @@ static void prvSensorReadTask (void* pvParameters)
 		GetSatusReg(&status);
 		if (status&0b0001000) //new data received
 		{
-			newData|=1;
+			newData++;
 		//	GetAccAxesRaw(&AccAxes);
 			readACC(data);
 
@@ -397,16 +322,38 @@ static void prvSensorReadTask (void* pvParameters)
 		if (status&0b00001000)
 		{
 			ReadGyro(data);
-			newData|=2;
+			newData++;
 			GyroAxes.AXIS_X=((int16_t*)data)[0];
 			GyroAxes.AXIS_Y=((int16_t*)data)[1];
 			GyroAxes.AXIS_Z=((int16_t*)data)[2];
 		}
-		if (newData==3)
+		if (newData==2)
 		{
+			if (AHRSstart==0)
+			{
+				AHRSstart++;
+				xTaskCreate(prvAHRSTask,(int8_t*)"AHRS",configMINIMAL_STACK_SIZE+128,NULL,TASK_AHRS_PRIORITY,NULL);
+			}
 			newData=0;
+			if (xSemaphoreTake(SensorDataMutex,portMAX_DELAY)==pdTRUE)
+			{
+				SensorData.Acc.AXIS_X=ACC_MAX*AccAxes.AXIS_X/INT16_MAX;
+				SensorData.Acc.AXIS_Y=ACC_MAX*AccAxes.AXIS_Y/INT16_MAX;
+				SensorData.Acc.AXIS_Z=ACC_MAX*AccAxes.AXIS_Z/INT16_MAX;
+
+				SensorData.Mag.AXIS_X=MAG_MAX*MagAxes.AXIS_X/INT16_MAX;
+				SensorData.Mag.AXIS_Y=MAG_MAX*MagAxes.AXIS_Y/INT16_MAX;
+				SensorData.Mag.AXIS_Z=MAG_MAX*MagAxes.AXIS_Z/INT16_MAX;
+
+				SensorData.Gyro.AXIS_X=GYRO_MAX*GyroAxes.AXIS_X/INT16_MAX*M_PI/180;
+				SensorData.Gyro.AXIS_X=GYRO_MAX*GyroAxes.AXIS_X/INT16_MAX*M_PI/180;
+				SensorData.Gyro.AXIS_X=GYRO_MAX*GyroAxes.AXIS_X/INT16_MAX*M_PI/180;
+				xSemaphoreGive(SensorDataMutex);
+			}
+
+
 		}
-		vTaskDelayUntil(&xLastWakeTime,100);
+		vTaskDelayUntil(&xLastWakeTime,1 * portTICK_RATE_MS);
 		float x=2;
 		x=invSqrt(x);
 		//x?=0.707168

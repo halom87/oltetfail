@@ -29,6 +29,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "USART.h"
 
 extern xSemaphoreHandle xADCSemaphore;
 
@@ -171,10 +172,12 @@ void DMA1_Channel4_IRQHandler(void)
 
 
 }
+extern uint8_t i2cDebug;
 void DMA1_Channel5_IRQHandler(void)
 {
 	uint8_t tmp;
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	i2cDebug=0;
 
 	xSemaphoreGiveFromISR(I2C_TransferComplete,&xHigherPriorityTaskWoken);
 	if (I2C_CheckEvent(I2C2,I2C_EVENT_MASTER_BYTE_RECEIVED))
@@ -197,6 +200,39 @@ void DMA1_Channel5_IRQHandler(void)
 
 
 
+}
+
+extern xQueueHandle TransmitQueue;
+extern xQueueHandle ReceiveQueue;
+void USART1_IRQHandler (void)
+{
+	portCHAR cChar;
+	portCHAR receivedata;
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	if( USART_GetITStatus( USART1, USART_IT_TXE ) == SET )
+	{
+		if( xQueueReceiveFromISR( TransmitQueue, &cChar, &xHigherPriorityTaskWoken ) == pdTRUE )
+		{
+			USART_SendData(USART1,cChar);
+		}
+		else
+		{
+			USART_ITConfig( USART1, USART_IT_TXE, DISABLE );
+		}
+	}
+	if (USART_GetITStatus(USART1,USART_IT_RXNE)==SET)
+	{
+		receivedata = USART_ReceiveData(USART1);
+		if( xQueueSendFromISR( ReceiveQueue, &receivedata, &xHigherPriorityTaskWoken) != pdTRUE)
+		{
+			// Betelt a buffer
+
+			// olcsó megoldás :P
+			USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+		}
+	}
+
+	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
 
 extern uint8_t I2C_TransmitNReceive;
