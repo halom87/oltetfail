@@ -212,6 +212,7 @@ static void prvPWMSetTask (void* pvParameters)
 	static uint8_t gaz=1;
 	portTickType xLastWakeTime;
 	xLastWakeTime=xTaskGetTickCount();
+	int8_t dBuffer[64];
 	while (1)
 	{
 		uint8_t i;
@@ -234,18 +235,22 @@ static void prvPWMSetTask (void* pvParameters)
 				percent+=5;
 			if (buffer[i]=='s')
 				percent-=5;
+			if (buffer[i]=='p')	percent=0;
 			if (percent<0) percent=0;
-			if (percent>20) percent=20;
+			if (percent>100) percent=100;
+
 			//sprintf(DebugSendBuffer,"Throttle %d\r\n", percent);
 			//UART_StartSend(DebugSendBuffer,0,0);
-		}//*/
+		}
+
 		if (percent!=0)
 		{
-			sprintf(DebugSendBuffer,"Throttle %d\r\n", percent);
-			UART_StartSend(DebugSendBuffer,0,0);
-			PWM_SetDutyCycle(percent);
-
+			sprintf(dBuffer,"Throttle %d\r\n", percent);
+			UART_StartSend(dBuffer,0,0);
 		}
+
+		PWM_SetDutyCycle(percent);
+
 		vTaskDelayUntil(&xLastWakeTime,1000*portTICK_RATE_MS);
 	}
 }
